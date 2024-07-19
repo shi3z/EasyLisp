@@ -47,14 +47,7 @@ person.name  ; Returns "Alice"
 person.age   ; Returns 30
 ```
 
-3. Nested objects:
-
-```lisp
-(set! person.address.street "123 Main St")
-person.address.street  ; Returns "123 Main St"
-```
-
-4. Defining a route for the web server:
+3. Defining a route for the web server:
 
 ```lisp
 (define (greet name) (list "Hello" name))
