@@ -27,6 +27,67 @@ class AsyncResult:
             raise
 
 
+
+# OpenAI API キーを設定する
+import os
+
+import requests
+from concurrent.futures import ThreadPoolExecutor
+import aiohttp
+
+def call_chatgpt(prompt):
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        api_key = input("Enter your OpenAI API key: ")
+        os.environ["OPENAI_API_KEY"] = api_key
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+
+
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        response_json = response.json()
+        return response_json["choices"][0]["message"]["content"]
+    else:
+        return f"Error: {response.status_code}, {response.text}"
+
+async def async_call_chatgpt(prompt):
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        api_key = input("Enter your OpenAI API key: ")
+        os.environ["OPENAI_API_KEY"] = api_key
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+
+    async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=data) as response:
+                print (response)
+                response_json = await response.json()
+                return response_json["choices"][0]["message"]["content"]
+
+
 class LispError(Exception):
     """A custom exception class for Lisp errors."""
     pass
@@ -107,14 +168,29 @@ def add_globals(env):
         'symbol?': lambda x: isinstance(x, Symbol),
         'object': lambda: LispObject(),
         'sleep':lisp_sleep,
+        "llm":async_call_chatgpt,
     })
     return env
 
 
 global_env = add_globals(Env())
 
-
-
+async def hogex(funcs):
+    print("ホゲー")
+    tasks=[]
+    for func in funcs:
+        print("投げた")
+        print(func)
+        #tasks.append(asyncio.create_task(async_call_chatgpt("こんにちは")))
+        tasks.append(asyncio.create_task(func.async_call()))
+        print("hoge-")
+    #results = await asyncio.gather(*tasks)
+    results=[]
+    for task in tasks:
+        results.append(await task)
+    print(results)
+    print("げろー")
+    return results
 
 class Procedure:
     """A user-defined procedure."""
@@ -122,20 +198,43 @@ class Procedure:
         self.parms, self.body, self.env, self.name = parms, body, env, name
 
     def __call__(self, *args):
+        print("プロシージャ")
         new_env = Env(self.parms, args, self.env)
         try:
-            result = eval(self.body, new_env)
-            print(f"Procedure result: {result}")  # デバッグ出力
-            print(f"Result {result } {type(result)}")
+            result =  eval(self.body, new_env)
             if asyncio.iscoroutine(result):
-                return result  # コルーチンの場合はそのまま返す
+                print("コルーチン!!!!")
+                result = eval(self.body, new_env)
+                return result 
             return result
         except Exception as e:
             print(f"Error in procedure execution: {e}")  # デバッグ出力
+            print(e)
             raise
 
+    async def async_call(self, *args):
+        print("プロシージャ　コルーチン")
+        new_env = Env(self.parms, args, self.env)
+        try:
+            print(self.body)
+            if str(self.body[0])=="llm":
+                print("async_call_chatgpt")
+                result = await async_call_chatgpt(self.body[1])
+                return result
+
+            result =  eval_async(self.body, new_env)
+            if asyncio.iscoroutine(result):
+                print("コルーチン!!!!")
+            return result
+        except Exception as e:
+            print(f"Error in procedure execution: {e}")  # デバッグ出力
+            print(e)
+            raise
+        
     def __str__(self):
         return f"#<procedure {self.name}>" if self.name else "#<procedure>"
+
+
 
 def set_nested_property(obj, props, value):
     if not isinstance(obj, LispObject):
@@ -160,21 +259,35 @@ async def lisp_to_async_func(lisp_func, env):
         if isinstance(lisp_func, Procedure):
             result = lisp_func()
         else:
+            if asyncio.iscoroutine(result):
+                print("コルーチン!!")
+                result = await eval_async(lisp_func, env)
+                return result
             result = eval(lisp_func, env)
         
         print(f"lisp_to_async_func result: {result}")  # デバッグ出力
         
-        if asyncio.iscoroutine(result):
-            return await result
         return result
     except Exception as e:
         print(f"Error in lisp function: {e}")
         raise
+import inspect
 
 async def run_async_functions(*funcs):
+    print("run_async_functions")
+    #tasks = [func() for func in functions]
     tasks=[]
     for func in funcs:
-        tasks.append(asyncio.create_task(func))
+        print("TASK====")
+        print(func)
+        print(inspect.iscoroutinefunction(func))
+        tasks.append(func())
+        print("hoge")
+    results = await asyncio.gather(*tasks)
+
+    return results
+    tasks = [func() for func in funcs]
+
 
     results=[]
     for task in tasks:
@@ -184,6 +297,7 @@ async def run_async_functions(*funcs):
 
 
 def eval(x, env=global_env):
+    print(x)
 
     """Evaluate an expression in an environment."""
     if isinstance(x, str):  # 定数リテラル
@@ -228,17 +342,18 @@ def eval(x, env=global_env):
 
     elif op == 'parallel':
         global global_event_loop
-        print("Evaluating asynccall")  # デバッグ出力
+        print("Evaluating parallel")  # デバッグ出力
         funcs = [eval(arg, env) for arg in args]
         print(f"Asynccall funcs: {funcs}")  # デバッグ出力
-        async_funcs = [lisp_to_async_func(func, env) for func in funcs]
+        #async_funcs = [ lisp_to_async_func(func, env) for func in funcs]
 
         try:
-            results=asyncio.run(run_async_functions(*async_funcs))
+            results=asyncio.run(hogex(funcs))
             print(f"Async results {results}")
             return results
         except Exception as e:
-            print(f"Error in asynccall: {e}")
+            print(f"Error in parallel: {e}")
+            print(e)
             raise
 
 
@@ -288,10 +403,17 @@ def eval(x, env=global_env):
         return obj
 
     else:                      # procedure call
-        proc = eval(x[0], env)
-        vals = [eval(arg, env) for arg in args]
-        print(f"Calling {proc} with args {vals}") 
-        result = proc(*vals)
+        if asyncio.iscoroutine(x[0]):
+            print("x[0]がコルーチン")
+            proc = eval(x[0], env)
+            vals = [eval(arg, env) for arg in args]
+            print(f"Calling {proc} with args {vals}") 
+            result = global_event_loop.run_until_complete(proc(*vals))
+        else:
+            proc = eval(x[0], env)
+            vals = [eval(arg, env) for arg in args]
+            print(f"Calling {proc} with args {vals}") 
+            result = proc(*vals)
         if asyncio.iscoroutine(result):
             print("Coroutine detected, running it")  # デバッグ出力
             return global_event_loop.run_until_complete(result)
