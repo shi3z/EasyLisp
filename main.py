@@ -84,13 +84,12 @@ class LispObject:
     def __repr__(self):
         return f"LispObject({self.properties})"
 
+import time
 # sleepをLisp関数として定義
 def lisp_sleep(seconds):
-    async def sleep_coroutine():
-        print(f"Sleeping for {seconds} seconds")  # デバッグ出力
-        await asyncio.sleep(float(seconds))
-        print("Sleep finished")  # デバッグ出力
-    return sleep_coroutine()
+    print(f"Sleeping for {seconds} seconds")  # デバッグ出力
+    time.sleep(float(seconds))
+    print("Sleep finished")  # デバッグ出力
 
 def add_globals(env):
     """Add some built-in procedures and variables to the environment."""
@@ -124,9 +123,6 @@ class Procedure:
 
     def __call__(self, *args):
         new_env = Env(self.parms, args, self.env)
-        print("Procedure===")
-        print(args)
-        print("=====")
         try:
             result = eval(self.body, new_env)
             print(f"Procedure result: {result}")  # デバッグ出力
@@ -211,7 +207,7 @@ def eval(x, env=global_env):
             return env[str(x)] 
         if str(x) in global_env:
             return global_env[str(x)] 
-        print("Error Undifined Symbol")
+        print(f"Error Undifined Symbol '{str(x)}'")
         return -1
     elif not isinstance(x, list):  # constantliteral
         return x                    
@@ -229,9 +225,6 @@ def eval(x, env=global_env):
         return eval(exp, env)
     elif op == 'define':       # definition
         (symbol, exp) = args
-        print("Define")
-        print(symbol)
-        print(type(symbol))
         if isinstance(symbol, list):  # Function definition
             fname = f"{symbol[0]}"
             params = symbol[1:]
@@ -242,15 +235,21 @@ def eval(x, env=global_env):
             env[symbol] = eval(exp, env)
 
     elif op == 'asynccall':
+        global global_event_loop
         print("Evaluating asynccall")  # デバッグ出力
         funcs = [eval(arg, env) for arg in args]
         print(f"Asynccall funcs: {funcs}")  # デバッグ出力
         async_funcs = [lisp_to_async_func(func, env) for func in funcs]
+
         try:
-            return global_event_loop.run_until_complete(run_async_functions(*async_funcs))
+            event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(event_loop)
+            return event_loop.run_until_complete(run_async_functions(*async_funcs))
         except Exception as e:
             print(f"Error in asynccall: {e}")
             raise
+        finally:
+            event_loop.close()
 
     elif op == 'await':
         print("Evaluating await")  # デバッグ出力
