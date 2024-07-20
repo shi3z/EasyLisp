@@ -199,14 +199,14 @@ def eval(x, env=global_env):
             return env[str(x)] 
         if str(x) in global_env:
             return global_env[str(x)] 
-        print(f"Error Undifined Symbol '{str(x)}'")
-        return -1
     elif not isinstance(x, list):  # constantliteral
         return x                    
     op, *args = x
     op=str(op)
     if op == 'quote':          # quotation
         return args[0]
+    elif op == 'env':
+        print(env)
     elif op == 'begin':
         for exp in args[:-1]:
             eval(exp, env)
@@ -224,9 +224,9 @@ def eval(x, env=global_env):
             env[fname] = func
             return func
         else:  # Variable definition
-            env[symbol] = eval(exp, env)
+            env[f"{symbol}"] = eval(exp, env)
 
-    elif op == 'asynccall':
+    elif op == 'parallel':
         global global_event_loop
         print("Evaluating asynccall")  # デバッグ出力
         funcs = [eval(arg, env) for arg in args]
@@ -240,27 +240,6 @@ def eval(x, env=global_env):
         except Exception as e:
             print(f"Error in asynccall: {e}")
             raise
-
-    elif op == 'await':
-        print("Evaluating await")  # デバッグ出力
-        if len(args) != 2:
-            raise LispError("await requires exactly 2 arguments: callback and async result")
-        callback, async_result = args
-        callback_func = eval(callback, env)
-        result = eval(async_result, env)
-        
-        if not isinstance(result, list) or not all(isinstance(r, AsyncResult) for r in result):
-            raise LispError("Second argument to await must be a result of asynccall")
-
-        async def wait_and_call():
-            for task in result:
-                await task.done.wait()
-                #print(f"Calling callback with result: {task.result}")  # デバッグ出力
-                callback_func(task.result)
-
-        global_event_loop.run_until_complete(wait_and_call())
-        return None
-
 
 
     elif op == 'debug': 
