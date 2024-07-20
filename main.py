@@ -172,24 +172,16 @@ async def lisp_to_async_func(lisp_func, env):
         raise
 
 async def run_async_functions(*funcs):
-    tasks = [AsyncResult(func) for func in funcs]
-    await asyncio.gather(*(task.run() for task in tasks))
-    return tasks
+    tasks=[]
+    for func in funcs:
+        tasks.append(asyncio.create_task(func))
 
-def lisp_sleep(*args):
-    if len(args) != 1:
-        raise ValueError("sleep function expects exactly one argument")
-    
-    seconds = args[0]
-    if not isinstance(seconds, (int, float)):
-        raise ValueError("sleep function expects a number")
-    
-    async def sleep_coroutine():
-        print(f"Sleeping for {seconds} seconds")  # デバッグ出力
-        await asyncio.sleep(float(seconds))
-        print("Sleep finished")  # デバッグ出力
-        return 'sleep_done'
-    return sleep_coroutine()
+    results=[]
+    for task in tasks:
+        results.append(await task)
+
+    return results
+
 
 def eval(x, env=global_env):
 
@@ -242,14 +234,12 @@ def eval(x, env=global_env):
         async_funcs = [lisp_to_async_func(func, env) for func in funcs]
 
         try:
-            event_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(event_loop)
-            return event_loop.run_until_complete(run_async_functions(*async_funcs))
+            results=asyncio.run(run_async_functions(*async_funcs))
+            print(f"Async results {results}")
+            return results
         except Exception as e:
             print(f"Error in asynccall: {e}")
             raise
-        finally:
-            event_loop.close()
 
     elif op == 'await':
         print("Evaluating await")  # デバッグ出力
