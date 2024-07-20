@@ -54,6 +54,20 @@ person.age   ; Returns 30
 (define-route "greet" greet)
 ```
 
+4. Parallel function call
+```lisp
+(define (async-func1) (begin (sleep 1) "hoge"))
+(define (async-func2) (begin (sleep 2) "fuga"))
+(define results (parallel async-func1 async-func2))
+```
+
+You can get async-result
+```lisp
+easylisp>(print results)
+["hoge","fuga"]
+```
+
+
 Now, accessing `http://localhost:8000/greet?name=Bob` in a web browser will return `["Hello", "Bob"]`.
 
 ## Contributing
