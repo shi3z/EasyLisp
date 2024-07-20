@@ -5,13 +5,50 @@ import threading
 import urllib.parse
 import json
 import traceback
+import asyncio
+from functools import partial
+
+
+global_event_loop = asyncio.new_event_loop()
+asyncio.set_event_loop(global_event_loop)
+
+class AsyncResult:
+    def __init__(self, coro):
+        self.coro = coro
+        self.result = None
+        self.done = asyncio.Event()
+
+    async def run(self):
+        try:
+            self.result = await self.coro
+            self.done.set()
+        except Exception as e:
+            print(f"Error in async execution: {e}")
+            raise
+
 
 class LispError(Exception):
     """A custom exception class for Lisp errors."""
     pass
 
-class Symbol(str):
-    pass
+
+class Symbol:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, other):
+        if isinstance(other, Symbol):
+            return self.name == other.name
+        return False
+
+    def __hash__(self):
+        return hash(self.name)
 
 def Sym(s, symbol_table={}):
     if s not in symbol_table:
@@ -47,6 +84,13 @@ class LispObject:
     def __repr__(self):
         return f"LispObject({self.properties})"
 
+# sleepをLisp関数として定義
+def lisp_sleep(seconds):
+    async def sleep_coroutine():
+        print(f"Sleeping for {seconds} seconds")  # デバッグ出力
+        await asyncio.sleep(float(seconds))
+        print("Sleep finished")  # デバッグ出力
+    return sleep_coroutine()
 
 def add_globals(env):
     """Add some built-in procedures and variables to the environment."""
@@ -63,20 +107,36 @@ def add_globals(env):
         'print': print, 'procedure?': callable, 'round': round,
         'symbol?': lambda x: isinstance(x, Symbol),
         'object': lambda: LispObject(),
+        'sleep':lisp_sleep,
     })
     return env
 
+
 global_env = add_globals(Env())
+
+
 
 
 class Procedure:
     """A user-defined procedure."""
     def __init__(self, parms, body, env, name=None):
         self.parms, self.body, self.env, self.name = parms, body, env, name
+
     def __call__(self, *args):
-        local_env = Env(self.parms, args, self.env)
-        # Evaluate the procedure's body in the local environment
-        return eval(self.body, local_env)
+        new_env = Env(self.parms, args, self.env)
+        print("Procedure===")
+        print(args)
+        print("=====")
+        try:
+            result = eval(self.body, new_env)
+            print(f"Procedure result: {result}")  # デバッグ出力
+            if asyncio.iscoroutine(result):
+                return result  # コルーチンの場合はそのまま返す
+            return result
+        except Exception as e:
+            print(f"Error in procedure execution: {e}")  # デバッグ出力
+            raise
+
     def __str__(self):
         return f"#<procedure {self.name}>" if self.name else "#<procedure>"
 
@@ -97,20 +157,65 @@ def set_nested_property(obj, props, value):
     print(f"Set property: {'.'.join(map(str, props))} = {value}")  # デバッグ出力
     return result
 
+async def lisp_to_async_func(lisp_func, env):
+    try:
+        print(f"Executing lisp function: {lisp_func}")  # デバッグ出力
+        if isinstance(lisp_func, Procedure):
+            result = lisp_func()
+        else:
+            result = eval(lisp_func, env)
+        
+        print(f"lisp_to_async_func result: {result}")  # デバッグ出力
+        
+        if asyncio.iscoroutine(result):
+            return await result
+        return result
+    except Exception as e:
+        print(f"Error in lisp function: {e}")
+        raise
+
+async def run_async_functions(*funcs):
+    tasks = [AsyncResult(func) for func in funcs]
+    await asyncio.gather(*(task.run() for task in tasks))
+    return tasks
+
+def lisp_sleep(*args):
+    if len(args) != 1:
+        raise ValueError("sleep function expects exactly one argument")
+    
+    seconds = args[0]
+    if not isinstance(seconds, (int, float)):
+        raise ValueError("sleep function expects a number")
+    
+    async def sleep_coroutine():
+        print(f"Sleeping for {seconds} seconds")  # デバッグ出力
+        await asyncio.sleep(float(seconds))
+        print("Sleep finished")  # デバッグ出力
+        return 'sleep_done'
+    return sleep_coroutine()
+
 def eval(x, env=global_env):
 
     """Evaluate an expression in an environment."""
-    if x[0]=='"':
-        return str(x[1:-1])
-    if isinstance(x, Symbol):      # variable reference
-        return env.find(x)[x]
-    elif isinstance(x, str):      # variable reference
+    if isinstance(x, str):  # 定数リテラル
+        if x[0]=='"':
+            return str(x[1:-1])
         return x
+    elif isinstance(x, (int, float, str)):  # 定数リテラル
+        return x
+    elif isinstance(x, Procedure):
+        return x 
+    if isinstance(x, Symbol):      # variable reference
+        return env[str(x)]
     elif not isinstance(x, list):  # constantliteral
         return x                    
     op, *args = x
     if op == 'quote':          # quotation
         return args[0]
+    elif op == 'begin':
+        for exp in args[:-1]:
+            eval(exp, env)
+        return eval(args[-1], env)
     elif op == 'if':           # conditional
         (test, conseq, alt) = args
         exp = (conseq if eval(test, env) else alt)
@@ -125,7 +230,40 @@ def eval(x, env=global_env):
             return func
         else:  # Variable definition
             env[symbol] = eval(exp, env)
- 
+
+    elif op == 'asynccall':
+        print("Evaluating asynccall")  # デバッグ出力
+        funcs = [eval(arg, env) for arg in args]
+        print(f"Asynccall funcs: {funcs}")  # デバッグ出力
+        async_funcs = [lisp_to_async_func(func, env) for func in funcs]
+        try:
+            return global_event_loop.run_until_complete(run_async_functions(*async_funcs))
+        except Exception as e:
+            print(f"Error in asynccall: {e}")
+            raise
+
+    elif op == 'await':
+        print("Evaluating await")  # デバッグ出力
+        if len(args) != 2:
+            raise LispError("await requires exactly 2 arguments: callback and async result")
+        callback, async_result = args
+        callback_func = eval(callback, env)
+        result = eval(async_result, env)
+        
+        if not isinstance(result, list) or not all(isinstance(r, AsyncResult) for r in result):
+            raise LispError("Second argument to await must be a result of asynccall")
+
+        async def wait_and_call():
+            for task in result:
+                await task.done.wait()
+                #print(f"Calling callback with result: {task.result}")  # デバッグ出力
+                callback_func(task.result)
+
+        global_event_loop.run_until_complete(wait_and_call())
+        return None
+
+
+
     elif op == 'debug': 
         print(env)
     elif op == 'lambda':       # procedure
@@ -173,8 +311,18 @@ def eval(x, env=global_env):
     else:                      # procedure call
         proc = eval(op, env)
         vals = [eval(arg, env) for arg in args]
-        return proc(*vals)
+        #print(f"Calling {proc} with args {vals}") 
+        result = proc(*vals)
+        if asyncio.iscoroutine(result):
+            print("Coroutine detected, running it")  # デバッグ出力
+            return global_event_loop.run_until_complete(result)
+        return result
 
+async def eval_async(x, env=global_env):
+    result = eval(x, env)
+    if asyncio.iscoroutine(result):
+        return await result
+    return result
 
 
 def parse(tokens):
@@ -215,7 +363,7 @@ def read_from_tokens(tokens):
     """Read an expression from a sequence of tokens."""
     if len(tokens) == 0:
         raise SyntaxError('unexpected EOF while reading')
-    print("Read from tokens")
+    #print("Read from tokens")
     print(tokens)
     token = tokens.pop(0)
     if token == '(':
@@ -370,8 +518,6 @@ def repl(prompt='easylisp> '):
         except LispError as e:
             print(f"LispError: {e}")
         
-        except Exception as e:
-            print(f"Error: {e}")
 
 route_table = {}
 
