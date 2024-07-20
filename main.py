@@ -274,7 +274,8 @@ def eval(x, env=global_env):
                 env_found[symbol] = value
                 return value
             else:
-                raise LispError(f"Unbound variable: '{symbol}'")
+                value = env[str(symbol)]=eval(exp,env)
+                return value
 
     elif op == 'dot':
         obj = eval(args[0], env)
@@ -304,20 +305,21 @@ async def eval_async(x, env=global_env):
 
 
 def parse(tokens):
-    if len(tokens) == 0:
+    if not tokens:  # リストが空の場合をチェックする
         raise SyntaxError('unexpected EOF')
+    
     token = tokens.pop(0)
     if token == '(':
         L = []
-        while tokens[0] != ')':
+        while tokens and tokens[0] != ')':  # tokens が空でない場合のみチェックする
             L.append(parse(tokens))
-        tokens.pop(0)  # pop off ')'
+        if tokens and tokens[0] == ')':  # tokens が空でない場合に閉じ括弧をポップする
+            tokens.pop(0)
         return L
     elif token == ')':
         raise SyntaxError('unexpected )')
     else:
         return parse_atom(token)
-
 
 def parse_atom(token):
     if '.' in token:
@@ -337,7 +339,8 @@ def tokenize(s):
     """Convert a string into a list of tokens."""
     #return s.replace('(',' ( ').replace(')',' ) ').split()
     #return re.findall(r'\(|\)|[^\s()]+', s)
-    return re.findall(r'\"(?:\\.|[^"])*\"|[()]|[^\s()]+', s)
+    #return re.findall(r'\"(?:\\.|[^"])*\"|[()]|[^\s()]+', s)
+    return re.findall(r'\"\"\"(?:\\.|[^\"])*\"\"\"|[()]|[^\s()]+', s)
 
 def read_from_tokens(tokens):
     """Read an expression from a sequence of tokens."""
@@ -478,26 +481,41 @@ def repl(prompt='easylisp> '):
     
     while True:
         try:
-            user_input = session.prompt(prompt)
+            user_input = []
+            multiline = False  # マルチライン入力フラグ
+            
+            while True:
+                line = session.prompt(prompt, default='')
+                user_input.append(line)
+                
+                if '"""' in line:  # トリプルクォートを含む場合
+                    multiline = not multiline  # マルチライン入力モードのトグル
+                
+                if not multiline:
+                    break  # マルチライン入力でない場合は次の入力を待つ
+            
+            user_input = '\n'.join(user_input)  # すべての行を結合する
+            print(f"Input: {user_input}")  # デバッグ用に入力を表示
             
             if user_input.lower() in ['exit', 'quit']:
                 print("Goodbye!")
                 break
             
+            # 簡易的な評価関数を呼び出す（トークン化やパースは簡略化）
             val = eval(parse(tokenize(user_input)))
             if val is not None:
-                print(lispstr(val))  # Print the Lisp-readable string representation
+                print(lispstr(val))  # Lisp 形式の文字列表現を印刷する
             
         except KeyboardInterrupt:
-            continue  # Handle Ctrl+C gracefully
+            continue  # Ctrl+C を優雅に処理する
             
         except EOFError:
             print("Goodbye!")
             break
         
-        except LispError as e:
-            print(f"LispError: {e}")
-        
+        except Exception as e:
+            print(f"Error: {e}")
+
 
 route_table = {}
 
