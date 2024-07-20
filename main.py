@@ -130,6 +130,7 @@ class Procedure:
         try:
             result = eval(self.body, new_env)
             print(f"Procedure result: {result}")  # デバッグ出力
+            print(f"Result {result } {type(result)}")
             if asyncio.iscoroutine(result):
                 return result  # コルーチンの場合はそのまま返す
             return result
@@ -195,7 +196,6 @@ def lisp_sleep(*args):
     return sleep_coroutine()
 
 def eval(x, env=global_env):
-    #print(x)
 
     """Evaluate an expression in an environment."""
     if isinstance(x, str):  # 定数リテラル
@@ -206,6 +206,13 @@ def eval(x, env=global_env):
         return x
     elif isinstance(x, Procedure):
         return x 
+    elif isinstance(x, Symbol):
+        if str(x) in env:
+            return env[str(x)] 
+        if str(x) in global_env:
+            return global_env[str(x)] 
+        print("Error Undifined Symbol")
+        return -1
     elif not isinstance(x, list):  # constantliteral
         return x                    
     op, *args = x
@@ -226,7 +233,7 @@ def eval(x, env=global_env):
         print(symbol)
         print(type(symbol))
         if isinstance(symbol, list):  # Function definition
-            fname = symbol[0]
+            fname = f"{symbol[0]}"
             params = symbol[1:]
             func = Procedure(params, exp, env, name=str(fname))  # Pass exp directly as body
             env[fname] = func
@@ -312,7 +319,7 @@ def eval(x, env=global_env):
         return obj
 
     else:                      # procedure call
-        proc = eval(op, env)
+        proc = eval(x[0], env)
         vals = [eval(arg, env) for arg in args]
         print(f"Calling {proc} with args {vals}") 
         result = proc(*vals)
@@ -348,6 +355,8 @@ def parse_atom(token):
     if '.' in token:
         parts = token.split('.')
         return ['dot', parse_atom(parts[0])] + [Sym(part) for part in parts[1:]]
+    if token[0]=='"' or token[0]=="'":
+        return str(token)
     try:
         return int(token)
     except ValueError:
