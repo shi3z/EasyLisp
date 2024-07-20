@@ -31,8 +31,8 @@ class Env(dict):
             return None  # 変数が見つからない場合は None を返す
 
 class LispObject:
-    def __init__(self, properties=None):
-        self.properties = properties or {}
+    def __init__(self):
+        self.properties = {}
 
     def get(self, key):
         return self.properties.get(key)
@@ -43,6 +43,10 @@ class LispObject:
 
     def __str__(self):
         return f"#<object {id(self)}>"
+
+    def __repr__(self):
+        return f"LispObject({self.properties})"
+
 
 def add_globals(env):
     """Add some built-in procedures and variables to the environment."""
@@ -76,6 +80,23 @@ class Procedure:
     def __str__(self):
         return f"#<procedure {self.name}>" if self.name else "#<procedure>"
 
+def set_nested_property(obj, props, value):
+    if not isinstance(obj, LispObject):
+        raise LispError(f"Cannot set property of non-object")
+    
+    for i, prop in enumerate(props[:-1]):
+        next_obj = obj.get(str(prop))
+        if next_obj is None:
+            next_obj = LispObject()
+            obj.set(str(prop), next_obj)
+        elif not isinstance(next_obj, LispObject):
+            raise LispError(f"Cannot set property '{props[i+1]}' of non-object")
+        obj = next_obj
+    
+    result = obj.set(str(props[-1]), value)
+    print(f"Set property: {'.'.join(map(str, props))} = {value}")  # デバッグ出力
+    return result
+
 def eval(x, env=global_env):
 
     """Evaluate an expression in an environment."""
@@ -104,31 +125,9 @@ def eval(x, env=global_env):
             return func
         else:  # Variable definition
             env[symbol] = eval(exp, env)
-    elif op == 'set!':
-        (symbol, exp) = args
-        if isinstance(symbol, list) and symbol[0] == 'dot':
-            obj = eval(symbol[1], env)
-            for prop in symbol[2:-1]:
-                if not isinstance(obj, LispObject):
-                    raise LispError(f"Cannot access property '{prop}' of non-object")
-                print(obj,prop)
-                next_obj = obj.get(str(prop))
-
-                if next_obj is None:
-                    obj.set(str(prop), next_obj)
-                obj = next_obj
-            value = eval(exp, env)
-            result = obj.set(str(symbol[2]), value)
-            print(f"Set property: {symbol[2]} = {value}")  # デバッグ出力
-            return result
-        else:
-            env_found = env.find(symbol)
-            if env_found is not None:
-                value = eval(exp, env)
-                env_found[symbol] = value
-                return value
-            else:
-                raise LispError(f"Unbound variable: '{symbol}'")
+ 
+    elif op == 'debug': 
+        print(env)
     elif op == 'lambda':       # procedure
         (parms, body) = args
         return Procedure(parms, ['begin'] + body, env)
@@ -144,12 +143,28 @@ def eval(x, env=global_env):
         if isinstance(func_name, Symbol):
             func_name = str(func_name)
         return define_route(path, func_name)
-    elif op == 'dot':
-        obj = env[args[0]]
+    elif op == 'set!':
+        print(f"Set! args: {args}")  # デバッグ出力
+        (symbol, exp) = args
+        if isinstance(symbol, list) and symbol[0] == 'dot':
+            obj = eval(symbol[1], env)
+            props = symbol[2:]
+            value = eval(exp, env)
+            return set_nested_property(obj, props, value)
+        else:
+            env_found = env.find(symbol)
+            if env_found is not None:
+                value = eval(exp, env)
+                env_found[symbol] = value
+                return value
+            else:
+                raise LispError(f"Unbound variable: '{symbol}'")
 
-        if not isinstance(obj, LispObject):
-            raise LispError(f"Cannot access property '{prop}' of non-object")
+    elif op == 'dot':
+        obj = eval(args[0], env)
         for prop in args[1:]:
+            if not isinstance(obj, LispObject):
+                raise LispError(f"Cannot access property '{prop}' of non-object")
             obj = obj.get(str(prop))
             if obj is None:
                 raise LispError(f"Undefined property: '{prop}'")
@@ -329,7 +344,7 @@ def lispstr(exp):
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 
-def repl(prompt='lisp> '):
+def repl(prompt='easylisp> '):
     """A prompt-read-eval-print loop with history and cursor movement."""
     session = PromptSession(history=FileHistory('.repl_history'))
     
