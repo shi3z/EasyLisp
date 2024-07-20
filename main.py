@@ -195,6 +195,7 @@ def lisp_sleep(*args):
     return sleep_coroutine()
 
 def eval(x, env=global_env):
+    #print(x)
 
     """Evaluate an expression in an environment."""
     if isinstance(x, str):  # 定数リテラル
@@ -205,11 +206,10 @@ def eval(x, env=global_env):
         return x
     elif isinstance(x, Procedure):
         return x 
-    if isinstance(x, Symbol):      # variable reference
-        return env[str(x)]
     elif not isinstance(x, list):  # constantliteral
         return x                    
     op, *args = x
+    op=str(op)
     if op == 'quote':          # quotation
         return args[0]
     elif op == 'begin':
@@ -222,6 +222,9 @@ def eval(x, env=global_env):
         return eval(exp, env)
     elif op == 'define':       # definition
         (symbol, exp) = args
+        print("Define")
+        print(symbol)
+        print(type(symbol))
         if isinstance(symbol, list):  # Function definition
             fname = symbol[0]
             params = symbol[1:]
@@ -311,7 +314,7 @@ def eval(x, env=global_env):
     else:                      # procedure call
         proc = eval(op, env)
         vals = [eval(arg, env) for arg in args]
-        #print(f"Calling {proc} with args {vals}") 
+        print(f"Calling {proc} with args {vals}") 
         result = proc(*vals)
         if asyncio.iscoroutine(result):
             print("Coroutine detected, running it")  # デバッグ出力
