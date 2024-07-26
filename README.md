@@ -54,6 +54,8 @@ person.age   ; Returns 30
 (define-route "greet" greet)
 ```
 
+Now, accessing `http://localhost:8000/greet?name=Bob` in a web browser will return `["Hello", "Bob"]`.
+
 4. Parallel function call
 ```lisp
 (define (async-func1) (begin (sleep 1) "hoge"))
@@ -67,8 +69,6 @@ easylisp>(print results)
 ["hoge","fuga"]
 ```
 
-
-Now, accessing `http://localhost:8000/greet?name=Bob` in a web browser will return `["Hello", "Bob"]`.
 
 ## Contributing
 
