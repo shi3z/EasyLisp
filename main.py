@@ -712,7 +712,7 @@ def repl(prompt='easylisp> '):
     session = PromptSession(history=FileHistory('.repl_history'))
     
     # Define the my-macro
-    eval(parse(tokenize('(define-macro (my-macro x y) `(+ ,x ,y))')))
+    eval(parse(tokenize('(define-macro (my-macro x y) (list \'+ x y))')))
     
     while True:
         try:
