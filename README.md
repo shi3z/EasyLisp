@@ -58,15 +58,31 @@ Now, accessing `http://localhost:8000/greet?name=Bob` in a web browser will retu
 
 4. Parallel function call
 ```lisp
-(define (async-func1) (begin (sleep 1) "hoge"))
-(define (async-func2) (begin (sleep 2) "fuga"))
+(define (async-func1) (llm "hello"))
+(define (async-func2) (llm "greeting"))
 (define results (parallel async-func1 async-func2))
 ```
 
 You can get async-result
 ```lisp
 easylisp>(print results)
-["hoge","fuga"]
+['Hello! How can I assist you today?', 'Hello! How can I assist you today?']
+```
+
+5. Command line execution
+```lisp
+(exec "ls -la")
+```
+
+then you can get result string
+
+```lisp
+"total 160
+drwxr-xr-x   5 shi3z  staff    160  7 28 20:53 .
+drwxr-xr-x  43 shi3z  staff   1376  7 20 18:33 ..
+-rw-r--r--   1 shi3z  staff  51630  7 28 22:02 .repl_history
+-rw-r--r--   1 shi3z  staff  22346  7 28 22:00 main.py
+-rw-r--r--   1 shi3z  staff   1822  7 20 00:38 test.py"
 ```
 
 
