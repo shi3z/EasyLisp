@@ -254,7 +254,7 @@ class Macro:
         new_env = Env(self.parms, args, self.env)
         try:
             expanded = self.expand(self.body, new_env)
-            return expanded
+            return eval(expanded, self.env)
         except Exception as e:
             print(f"Error in macro expansion: {e}")  # デバッグ出力
             print(e)
@@ -262,7 +262,8 @@ class Macro:
 
     def expand(self, x, env):
         if isinstance(x, Symbol):
-            return env.find(str(x))[str(x)]
+            found_env = env.find(str(x))
+            return found_env[str(x)] if found_env else x
         elif not isinstance(x, list):
             return x
         elif x[0] == 'quote':
