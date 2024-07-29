@@ -278,17 +278,22 @@ class Macro:
     def expand(self, x, env):
         try:
             if isinstance(x, Symbol):
+                print(f"Expanding symbol: {x}")  # Debug output
                 found_env = env.find(str(x))
                 return found_env[str(x)] if found_env else x
             elif not isinstance(x, list):
+                print(f"Expanding non-list: {x}")  # Debug output
                 return x
             elif len(x) == 0:
                 return x
             elif x[0] == 'quote':
+                print(f"Expanding quote: {x}")  # Debug output
                 return x
             elif x[0] == '`':
+                print(f"Expanding quasiquote: {x}")  # Debug output
                 return self.quasiquote(x[1], env)
             else:
+                print(f"Expanding list: {x}")  # Debug output
                 return [self.expand(elem, env) for elem in x]
         except Exception as e:
             print(f"Error in expand: {e}")
@@ -406,6 +411,7 @@ def eval(x, env=global_env):
     print(x)
     """Evaluate an expression in an environment."""
     try:
+        print(f"Evaluating: {x} in environment: {env}")  # Debug output
         if isinstance(x, str):  # 定数リテラル
             return x[1:-1] if x[0] == '"' else x
         elif isinstance(x, (int, float, Procedure, Macro)):
