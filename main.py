@@ -304,15 +304,12 @@ class Macro:
     def quasiquote(self, x, env):
         if not isinstance(x, list):
             return x
+        if len(x) > 0 and x[0] == Symbol('unquote'):
+            return eval(x[1], env)
         result = []
         for elem in x:
-            if isinstance(elem, list) and len(elem) > 0:
-                if elem[0] == Symbol(','):
-                    result.append(eval(elem[1], env))
-                elif elem[0] == Symbol('unquote'):
-                    result.append(eval(elem[1], env))
-                else:
-                    result.append(self.quasiquote(elem, env))
+            if isinstance(elem, list):
+                result.append(self.quasiquote(elem, env))
             elif isinstance(elem, Symbol) and str(elem).startswith(','):
                 result.append(eval(Sym(str(elem)[1:]), env))
             else:
