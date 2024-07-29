@@ -288,11 +288,11 @@ class Macro:
             elif x[0] == 'quote':
                 print(f"Expanding quote: {x}")  # Debug output
                 return x
-            elif x[0] == '`':
-                print(f"Expanding quasiquote: {x}")  # Debug output
+            elif x[0] == '`':  # Quasiquote
                 return self.quasiquote(x[1], env)
+            elif x[0] == ',':  # Unquote
+                return eval(x[1], env)
             else:
-                print(f"Expanding list: {x}")  # Debug output
                 return [self.expand(elem, env) for elem in x]
         except Exception as e:
             print(f"Error in expand: {e}")
@@ -302,11 +302,20 @@ class Macro:
     def quasiquote(self, x, env):
         if not isinstance(x, list):
             return x
-        if len(x) == 2 and x[0] == 'unquote':
-            return env.find(str(x[1]))[str(x[1])]
-        return [self.quasiquote(elem, env) if isinstance(elem, list) else
-                env.find(str(elem))[str(elem)] if isinstance(elem, Symbol) else elem
-                for elem in x]
+        result = []
+        for elem in x:
+            if isinstance(elem, list) and len(elem) > 0:
+                if elem[0] == Symbol(','):
+                    result.append(eval(elem[1], env))
+                elif elem[0] == Symbol('unquote'):
+                    result.append(eval(elem[1], env))
+                else:
+                    result.append(self.quasiquote(elem, env))
+            elif isinstance(elem, Symbol) and str(elem).startswith(','):
+                result.append(eval(Sym(str(elem)[1:]), env))
+            else:
+                result.append(elem)
+        return result
 
     async def async_call(self, *args):
         new_env = Env(self.parms, args, self.env)
