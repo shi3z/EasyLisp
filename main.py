@@ -644,11 +644,12 @@ def parse(tokens):
     elif token == '`':
         return [Symbol('`'), parse(tokens)]
     elif token.startswith(','):
+        print(f"token:{token}")
         if token.startswith(',@'):
             return [Symbol('unquote-splicing'), Symbol(token[2:])]
         elif token == ',':
             return Symbol(',')
-        return [Symbol('unquote'), Symbol(token[1:])]
+        return [Symbol(token)]
     else:
         return parse_atom(token)
 
