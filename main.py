@@ -278,9 +278,9 @@ class Macro:
         try:
             print(f"x={x}")
             print(type(x))
-            if str(x)[0] == '`':  # Quasiquote
-                return self.quasiquote(str(x)[1], env)
-            if str(x)[0] == ',':  # Unquote
+            if isinstance(x, list) and len(x) > 0 and x[0] == Symbol('`'):  # Quasiquote
+                return self.quasiquote(x[1], env)
+            if isinstance(x, list) and len(x) > 0 and x[0] == Symbol(','):  # Unquote
                 print(f"unquote {x[1]}")
                 return x[1]
             elif isinstance(x, Symbol):
