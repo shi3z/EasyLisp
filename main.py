@@ -693,6 +693,9 @@ def repl(prompt='easylisp> '):
     """A prompt-read-eval-print loop with history and cursor movement."""
     session = PromptSession(history=FileHistory('.repl_history'))
     
+    # Define the my-macro
+    eval(parse(tokenize('(define-macro (my-macro x y) (list (quote string-append) x y))')))
+    
     while True:
         try:
             user_input = []
