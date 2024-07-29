@@ -761,7 +761,7 @@ def repl(prompt='easylisp> '):
               result))
           (begin
             (print "Error: Invalid bindings")
-            (error "while-let requires a binding list with exactly two elements"))))
+            (list 'error "while-let requires a binding list with exactly two elements"))))
     ''')))
     
     # Example usage of while-let macro with debug output
