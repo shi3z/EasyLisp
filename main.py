@@ -188,6 +188,7 @@ def add_globals(env):
         '+':op.add, '-':op.sub, '*':op.mul, '/':op.truediv, 
         '>':op.gt, '<':op.lt, '>=':op.ge, '<=':op.le, '=':op.eq, 
         'abs': abs, 'append': op.add, 'apply': lambda proc, args: proc(*args),
+        'and': lambda *args: all(args),
         'begin': lambda *x: x[-1],
         'car': lambda x: x[0], 'cdr': lambda x: x[1:], 'cons': lambda x,y: [x] + y,
         'eq?': op.is_, 'equal?': op.eq, 'length': len, 'list': lambda *x: list(x),
