@@ -311,6 +311,7 @@ class Macro:
             return eval(x[1], env)
         result = []
         for elem in x:
+            print(f"elem:{elem}")
             if isinstance(elem, list):
                 result.append(self.quasiquote(elem, env))
             elif isinstance(elem, Symbol) and str(elem).startswith(','):
