@@ -972,3 +972,4 @@ if __name__ == '__main__':
         file_path = sys.argv[1]
         result = execute_file(file_path, global_env)
     repl()
+from hello import hello
