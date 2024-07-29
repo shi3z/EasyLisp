@@ -302,6 +302,8 @@ class Macro:
             raise
 
     def quasiquote(self, x, env):
+        print("quasiquote")
+        print(x)
         if not isinstance(x, list):
             return x
         if len(x) > 0 and x[0] == Symbol('unquote'):
