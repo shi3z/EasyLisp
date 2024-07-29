@@ -841,7 +841,7 @@ def repl(prompt='easylisp> '):
       `(begin
          (define (loop val)
            (print (format "Inside simple-macro: x = {}" val))
-           (if (begin ,x)
+           (if ,x
                (loop (- val 1))
                val))
          (loop ,x)))
