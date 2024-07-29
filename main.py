@@ -728,6 +728,8 @@ def quasiquote(x, env):
                 result.append(eval(elem, env))
             else:
                 result.append(quasiquote(elem, env))
+        elif isinstance(elem, Symbol) and str(elem).startswith(','):
+            result.append(eval(Sym(str(elem)[1:]), env))
         else:
             result.append(elem)
     return result
