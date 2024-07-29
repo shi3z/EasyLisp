@@ -744,8 +744,8 @@ def repl(prompt='easylisp> '):
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
       (print "Macro input:")
-      (print "  bindings:" bindings)
-      (print "  body:" body)
+      (print (format "  bindings: {}" bindings))
+      (print (format "  body: {}" body))
       (if (and (list? bindings) (= (length bindings) 2))
           (let ((var (car bindings))
                 (expr (cadr bindings)))
@@ -757,7 +757,7 @@ def repl(prompt='easylisp> '):
                                      (loop))
                                    'done)))))
               (print "Macro expansion:")
-              (print result)
+              (print (format "  {}" (lispstr result)))
               result))
           (begin
             (print "Error: Invalid bindings")
@@ -767,11 +767,11 @@ def repl(prompt='easylisp> '):
     # Example usage of while-let macro with debug output
     eval(parse(tokenize('''
     (define count 5)
-    (print "Starting while-let example with count =" count)
+    (print (format "Starting while-let example with count = {}" count))
     (while-let (x (> count 0))
-      (print "Inside loop: count =" count)
+      (print (format "Inside loop: count = {}" count))
       (set! count (- count 1)))
-    (print "After while-let: count =" count)
+    (print (format "After while-let: count = {}" count))
     ''')))
     
     while True:
