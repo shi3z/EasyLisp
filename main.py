@@ -254,7 +254,7 @@ class Macro:
         new_env = Env(self.parms, args, self.env)
         try:
             expanded = eval(self.body, new_env)
-            return eval(expanded, self.env)
+            return expanded  # Return the expanded form without evaluating it
         except Exception as e:
             print(f"Error in macro expansion: {e}")  # デバッグ出力
             print(e)
@@ -414,7 +414,7 @@ def eval(x, env=global_env):
                 mname = f"{symbol[0]}"
                 params = symbol[1:]
                 body = args[1:]
-                macro = Macro(params, ['begin'] + body, env, name=str(mname))
+                macro = Macro(params, body[0] if len(body) == 1 else ['begin'] + body, env, name=str(mname))
                 env[mname] = macro
                 return macro
             else:
@@ -486,7 +486,7 @@ def eval(x, env=global_env):
             proc = eval(x[0], env)
             if isinstance(proc, Macro):
                 expanded = proc(*args)
-                return eval(expanded, env)
+                return eval(expanded, env)  # Evaluate the expanded macro
             elif asyncio.iscoroutine(x[0]):
                 vals = [eval(arg, env) for arg in args]
                 result = global_event_loop.run_until_complete(proc(*vals))
