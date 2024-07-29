@@ -855,6 +855,12 @@ def repl(prompt='easylisp> '):
     (define-macro (increment var amount)
       `(set! ,var (+ ,var ,amount)))
     ''')))
+
+    # Define a simple increment macro
+    eval(parse(tokenize('''
+    (define-macro (increment var amount)
+      `(set! ,var (+ ,var ,amount)))
+    ''')))
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
       (if (and (list? bindings) (= (length bindings) 2))
