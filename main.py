@@ -429,6 +429,8 @@ def eval(x, env=global_env):
             return quasiquote(args[0], env)
         elif op == ',':  # Unquote
             return eval(args[0], env)
+        elif op == 'unquote':  # Explicit unquote
+            return eval(args[0], env)
         elif op == 'env':
             print(env)
         elif op == 'begin':
@@ -668,20 +670,19 @@ def unquote_splicing(x, env):
 def quasiquote(x, env):
     if not isinstance(x, list):
         return x
-    if len(x) == 2:
-        if x[0] == Symbol('unquote'):
-            return eval(x[1], env)
-        elif x[0] == Symbol('unquote-splicing'):
-            return unquote_splicing(x[1], env)
+    if len(x) == 2 and x[0] == Symbol('unquote'):
+        return eval(x[1], env)
     result = []
     for elem in x:
         if isinstance(elem, Symbol) and str(elem).startswith(','):
             var_name = str(elem)[1:]
-            result.append(env.find(var_name)[var_name])
+            found_env = env.find(var_name)
+            if found_env is not None:
+                result.append(found_env[var_name])
+            else:
+                raise LispError(f"Symbol '{var_name}' not found in environment")
         elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote'):
             result.append(eval(elem[1], env))
-        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote-splicing'):
-            result.extend(unquote_splicing(elem[1], env))
         else:
             result.append(quasiquote(elem, env))
     return result
