@@ -815,7 +815,13 @@ def repl(prompt='easylisp> '):
     # Define the my-macro
     eval(parse(tokenize('(define-macro (my-macro x y) (list \'+ x y))')))
     
-    # Define the while-let macro with debug output
+    # Define a simple macro for testing
+    eval(parse(tokenize('''
+    (define-macro (simple-macro x)
+      `(begin
+         (print (format "Inside simple-macro: x = {}" ,x))
+         x))
+    ''')))
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
       (if (and (list? bindings) (= (length bindings) 2))
@@ -831,7 +837,15 @@ def repl(prompt='easylisp> '):
           (error "while-let requires a binding list with exactly two elements")))
     ''')))
     
-    # Example usage of while-let macro with debug output
+    # Example usage of simple-macro
+    eval(parse(tokenize('''
+    (define (test-simple-macro)
+      (define count 5)
+      (print (format "Starting simple-macro example with count = {}" count))
+      (simple-macro (begin (print (format "Evaluating condition: count = {}" count)) (> count 0)))
+      (print (format "After simple-macro: count = {}" count)))
+    (test-simple-macro)
+    ''')))
     eval(parse(tokenize('''
     (define (test-while-let)
       (define count 5)
