@@ -589,7 +589,7 @@ def parse_atom(token):
     if token.startswith(','):
         return Symbol(token)
     if token.startswith('@'):
-        return Symbol(token)  # @で始まるシンボルを通常のシンボルとして扱う
+        return ['unquote', Symbol(token[1:])]  # @symbolname を (unquote symbolname) として扱う
     try:
         return int(token)
     except ValueError:
@@ -655,7 +655,7 @@ def quasiquote(x, env):
     if len(x) == 2 and x[0] == 'unquote':
         return eval(x[1], env)
     return [quasiquote(elem, env) if isinstance(elem, list) else
-            eval(elem, env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == 'unquote'
+            eval(elem[1], env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == 'unquote'
             else elem
             for elem in x]
 
