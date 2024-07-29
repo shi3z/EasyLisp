@@ -372,6 +372,8 @@ def eval(x, env=global_env):
         if op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
         elif op == ',':  # Unquote
+            if isinstance(args[0], Symbol):
+                return eval(str(args[0]), env)
             return eval(args[0], env)
         elif op == 'quote':          # quotation
             return args[0]
