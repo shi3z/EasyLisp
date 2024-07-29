@@ -276,9 +276,14 @@ class Macro:
 
     def expand(self, x, env):
         try:
-            print(x)
+            print(f"x={x}")
             print(type(x))
-            if isinstance(x, Symbol):
+            if str(x)[0] == '`':  # Quasiquote
+                return self.quasiquote(str(x)[1], env)
+            if str(x)[0] == ',':  # Unquote
+                print(f"unquote {x[1]}")
+                return x[1]
+            elif isinstance(x, Symbol):
                 print(f"Expanding symbol: {x}")  # Debug output
                 found_env = env.find(str(x))
                 return found_env[str(x)] if found_env else x
@@ -290,10 +295,6 @@ class Macro:
             elif x[0] == 'quote':
                 print(f"Expanding quote: {x}")  # Debug output
                 return x
-            elif x[0] == '`':  # Quasiquote
-                return self.quasiquote(x[1], env)
-            elif x[0] == ',':  # Unquote
-                return eval(x[1], env)
             else:
                 return [self.expand(elem, env) for elem in x]
         except Exception as e:
