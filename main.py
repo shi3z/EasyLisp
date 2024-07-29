@@ -11,7 +11,6 @@ import subprocess
 import shlex
 import sys
 import traceback
-from hello import hello
 
 global_event_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(global_event_loop)
