@@ -373,6 +373,8 @@ def eval(x, env=global_env):
             return quasiquote(args[0], env)
         if op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
+        elif op == ',':  # Unquote
+            return eval(args[0], env)
         elif op == 'quote':          # quotation
             return args[0]
         elif op == 'env':
@@ -706,7 +708,7 @@ def repl(prompt='easylisp> '):
     session = PromptSession(history=FileHistory('.repl_history'))
     
     # Define the my-macro
-    eval(parse(tokenize('(define-macro (my-macro x y) (list (quote string-append) x y))')))
+    eval(parse(tokenize('(define-macro (my-macro x y) `(string-append ,x ,y))')))
     
     while True:
         try:
