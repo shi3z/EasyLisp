@@ -5,6 +5,7 @@ import threading
 import urllib.parse
 import json
 import traceback
+from hello import hello
 import asyncio
 from functools import partial
 import subprocess
@@ -940,6 +941,8 @@ def repl(prompt='easylisp> '):
 
 
 route_table = {}
+
+hello()
 
 hello()
 
