@@ -11,6 +11,7 @@ import subprocess
 import shlex
 import sys
 import traceback
+from hello import hello
 
 global_event_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(global_event_loop)
@@ -934,6 +935,8 @@ def repl(prompt='easylisp> '):
 
 
 route_table = {}
+
+hello()
 
 if __name__ == '__main__':
     print("Starting the EasyLisp web server...")
