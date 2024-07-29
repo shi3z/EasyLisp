@@ -136,6 +136,9 @@ class Env(dict):
         else:
             return None  # 変数が見つからない場合は None を返す
 
+def current_environment(self):
+    return self
+
 class LispObject:
     def __init__(self):
         self.properties = {}
@@ -198,6 +201,7 @@ def add_globals(env):
         "llm":async_call_chatgpt,
         'exec': exec_command,
         'load': lambda x: execute_file(x, env),
+        'current-environment': lambda: env,
     })
     return env
 
@@ -768,7 +772,7 @@ def repl(prompt='easylisp> '):
                                    'done)))))
               (print "Macro expansion:")
               (print (format "  {}" (lispstr result)))
-              result))
+              (eval result (current-environment))))
           (list 'quote (list 'error "while-let requires a binding list with exactly two elements"))))
     ''')))
     
