@@ -202,6 +202,7 @@ def add_globals(env):
         'exec': exec_command,
         'load': lambda x: execute_file(x, env),
         'current-environment': lambda: env,
+        'when': lambda condition, *body: eval(['begin'] + list(body), env) if condition else None,
     })
     return env
 
