@@ -465,7 +465,8 @@ def eval(x, env=global_env):
                 value = eval(exp, env)
                 env[str(symbol)] = value
                 return value
-        elif op == 'define-macro':  # macro definition
+        elif op == 'error':
+            raise LispError(args[0] if args else "Unknown error")
             if len(args) < 2:
                 raise LispError("define-macro requires at least 2 arguments")
             symbol = args[0]
