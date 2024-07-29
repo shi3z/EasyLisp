@@ -585,10 +585,10 @@ def atom(token):
 def quasiquote(x, env):
     if not isinstance(x, list):
         return x
-    if len(x) == 2 and x[0] == 'unquote':
+    if len(x) > 0 and x[0] == 'unquote':
         return eval(x[1], env)
     return [quasiquote(elem, env) if isinstance(elem, list) else
-            eval(elem, env) if isinstance(elem, Symbol) and str(elem) == 'unquote'
+            eval(elem[1], env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == 'unquote'
             else elem
             for elem in x]
 
