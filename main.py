@@ -408,10 +408,10 @@ def unquote(x, env):
         return x
 
 def eval(x, env=global_env):
-    print(x)
+    #print(x)
     """Evaluate an expression in an environment."""
     try:
-        print(f"Evaluating: {x} in environment: {env}")  # Debug output
+        #print(f"Evaluating: {x} in environment: {env}")  # Debug output
         if isinstance(x, str):  # 定数リテラル
             return x[1:-1] if x[0] == '"' else x
         elif isinstance(x, (int, float, Procedure, Macro)):
