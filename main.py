@@ -371,8 +371,6 @@ def eval(x, env=global_env):
         
         if op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
-        if op == '`':  # Quasiquotation
-            return quasiquote(args[0], env)
         elif op == ',':  # Unquote
             return eval(args[0], env)
         elif op == 'quote':          # quotation
@@ -512,7 +510,6 @@ async def eval_async(x, env=global_env):
 
 
 def parse(tokens):
-
     if not tokens:  # リストが空の場合をチェックする
         raise SyntaxError('unexpected EOF')
     
@@ -526,6 +523,10 @@ def parse(tokens):
         return L
     elif token == ')':
         raise SyntaxError('unexpected )')
+    elif token == '`':
+        return [Symbol('`'), parse(tokens)]
+    elif token == ',':
+        return [Symbol(','), parse(tokens)]
     else:
         return parse_atom(token)
 
