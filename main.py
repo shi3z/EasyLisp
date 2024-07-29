@@ -782,6 +782,18 @@ def repl(prompt='easylisp> '):
     
     # Example usage of while-let macro with debug output
     eval(parse(tokenize('''
+    (define (test-while-let)
+      (define count 5)
+      (print (format "Starting while-let example with count = {}" count))
+      (while-let (x (begin (print (format "Evaluating condition: count = {}" count)) (> count 0)))
+        (print (format "Inside loop: x = {}, count = {}" x count))
+        (set! count (- count 1)))
+      (print (format "After while-let: count = {}" count)))
+    (test-while-let)
+    ''')))
+    
+    # Example usage of while-let macro with debug output
+    eval(parse(tokenize('''
     (define count 5)
     (print (format "Starting while-let example with count = {}" count))
     (while-let (x (begin (print (format "Evaluating condition: count = {}" count)) (> count 0)))
