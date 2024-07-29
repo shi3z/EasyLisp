@@ -589,7 +589,7 @@ def parse_atom(token):
     if token.startswith(','):
         return Symbol(token)
     if token.startswith('@'):
-        return Symbol(token)  # Treat @body as a special symbol
+        return Symbol(token)  # @で始まるシンボルを通常のシンボルとして扱う
     try:
         return int(token)
     except ValueError:
