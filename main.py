@@ -742,7 +742,7 @@ def quasiquote(x, env):
                 result.append(eval(elem, env))
             else:
                 result.append(quasiquote(elem, env))
-        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote'):
+        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol(','):
             result.append(eval(elem[1], env))
         else:
             result.append(elem)
