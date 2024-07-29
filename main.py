@@ -11,7 +11,6 @@ import subprocess
 import shlex
 import sys
 import traceback
-from hello import hello
 
 global_event_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(global_event_loop)
@@ -751,7 +750,7 @@ class LispHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps(result).encode())
+                self.wfile.write(json.dumps(result).encodhee())
             except Exception as e:
                 print(f"Error executing function: {e}")
                 print(traceback.format_exc())
