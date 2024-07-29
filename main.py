@@ -768,7 +768,7 @@ def repl(prompt='easylisp> '):
                  ,@body
                  (set! ,var ,expr)
                  (loop ,var))))
-          '(error "while-let requires a binding list with exactly two elements")))
+          (error "while-let requires a binding list with exactly two elements")))
     ''')))
     
     # Example usage of while-let macro with debug output
