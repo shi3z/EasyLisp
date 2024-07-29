@@ -565,6 +565,8 @@ def eval(x, env=global_env):
             proc = eval(x[0], env)
             if isinstance(proc, Macro):
                 expanded = proc(*x[1:])
+                print("====")
+                print(expanded)
                 return eval(expanded, env)  # Evaluate the expanded macro
             elif asyncio.iscoroutine(x[0]):
                 vals = [eval(arg, env) for arg in args]
