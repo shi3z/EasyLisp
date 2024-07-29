@@ -371,7 +371,9 @@ def eval(x, env=global_env):
         
         if op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
-        if op == 'quote':          # quotation
+        if op == '`':  # Quasiquotation
+            return quasiquote(args[0], env)
+        elif op == 'quote':          # quotation
             return args[0]
         elif op == 'env':
             print(env)
@@ -577,6 +579,16 @@ def atom(token):
             return float(token)
         except ValueError:
             return Symbol(token)
+
+def quasiquote(x, env):
+    if not isinstance(x, list):
+        return x
+    if len(x) == 2 and x[0] == 'unquote':
+        return eval(x[1], env)
+    return [quasiquote(elem, env) if isinstance(elem, list) else
+            eval(elem, env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == 'unquote'
+            else elem
+            for elem in x]
 
 def quasiquote(x, env):
     if not isinstance(x, list):
