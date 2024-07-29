@@ -188,7 +188,7 @@ def add_globals(env):
     """Add some built-in procedures and variables to the environment."""
     env.update({
         '+':op.add, '-':op.sub, '*':op.mul, '/':op.truediv, 
-        '>':op.gt, '<':op.lt, '>=':op.ge, '<=':op.le, '=':op.eq, 
+        '>':lambda x, y: x > y, '<':lambda x, y: x < y, '>=':lambda x, y: x >= y, '<=':lambda x, y: x <= y, '=':op.eq, 
         'abs': abs, 'append': op.add, 'apply': lambda proc, args: proc(*args),
         'and': lambda *args: all(args),
         'or': lambda *args: any(args),
@@ -801,9 +801,11 @@ def repl(prompt='easylisp> '):
                 (expr (cadr bindings)))
             `(let loop ()
                (let ((,var ,expr))
-                 (when ,var
-                   ,@body
-                   (loop)))))
+                 (if ,var
+                   (begin
+                     ,@body
+                     (loop))
+                   'done))))
           (error "while-let requires a binding list with exactly two elements")))
     ''')))
     
