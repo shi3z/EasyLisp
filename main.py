@@ -376,7 +376,7 @@ def eval(x, env=global_env):
                 return eval(str(args[0]), env)
             return eval(args[0], env)
         elif op == 'quote':          # quotation
-            return args[0]
+            return args[0] if args else None
         elif op == 'env':
             print(env)
         elif op == 'begin':
