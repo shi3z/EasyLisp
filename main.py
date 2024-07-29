@@ -253,12 +253,33 @@ class Macro:
     def __call__(self, *args):
         new_env = Env(self.parms, args, self.env)
         try:
-            expanded = eval(self.body, new_env)
-            return expanded  # Return the expanded form without evaluating it
+            expanded = self.expand(self.body, new_env)
+            return expanded
         except Exception as e:
             print(f"Error in macro expansion: {e}")  # デバッグ出力
             print(e)
             raise
+
+    def expand(self, x, env):
+        if isinstance(x, Symbol):
+            return env.find(str(x))[str(x)]
+        elif not isinstance(x, list):
+            return x
+        elif x[0] == 'quote':
+            return x
+        elif x[0] == '`':
+            return self.quasiquote(x[1], env)
+        else:
+            return [self.expand(elem, env) for elem in x]
+
+    def quasiquote(self, x, env):
+        if not isinstance(x, list):
+            return x
+        if len(x) == 2 and x[0] == 'unquote':
+            return env.find(str(x[1]))[str(x[1])]
+        return [self.quasiquote(elem, env) if isinstance(elem, list) else
+                env.find(str(elem))[str(elem)] if isinstance(elem, Symbol) else elem
+                for elem in x]
 
     async def async_call(self, *args):
         new_env = Env(self.parms, args, self.env)
@@ -485,7 +506,7 @@ def eval(x, env=global_env):
         else:                      # procedure or macro call
             proc = eval(x[0], env)
             if isinstance(proc, Macro):
-                expanded = proc(*args)
+                expanded = proc(*x[1:])
                 return eval(expanded, env)  # Evaluate the expanded macro
             elif asyncio.iscoroutine(x[0]):
                 vals = [eval(arg, env) for arg in args]
