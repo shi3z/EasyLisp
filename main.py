@@ -643,8 +643,10 @@ def parse(tokens):
         raise SyntaxError('unexpected )')
     elif token == '`':
         return [Symbol('`'), parse(tokens)]
-    elif token == ',':
-        return [Symbol(','), parse(tokens)]
+    elif token.startswith(','):
+        if token.startswith(',@'):
+            return [Symbol('unquote-splicing'), Symbol(token[2:])]
+        return [Symbol('unquote'), Symbol(token[1:])]
     else:
         return parse_atom(token)
 
