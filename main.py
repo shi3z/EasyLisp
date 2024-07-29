@@ -739,15 +739,17 @@ def repl(prompt='easylisp> '):
     # Define the while-let macro
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
-      (let ((var (car bindings))
-            (expr (cadr bindings)))
-        `(let loop ()
-           (let ((,var ,expr))
-             (if ,var
-                 (begin
-                   ,@body
-                   (loop))
-                 'done)))))
+      (if (and (list? bindings) (= (length bindings) 2))
+          (let ((var (car bindings))
+                (expr (cadr bindings)))
+            `(let loop ()
+               (let ((,var ,expr))
+                 (if ,var
+                     (begin
+                       ,@body
+                       (loop))
+                     'done))))
+          (error "while-let requires a binding list with exactly two elements")))
     ''')))
     
     # Example usage of while-let macro
