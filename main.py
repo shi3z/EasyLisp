@@ -5,13 +5,11 @@ import threading
 import urllib.parse
 import json
 import traceback
-from hello import hello
 import asyncio
 from functools import partial
 import subprocess
 import shlex
 import sys
-import traceback
 
 global_event_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(global_event_loop)
@@ -941,10 +939,6 @@ def repl(prompt='easylisp> '):
 
 
 route_table = {}
-
-hello()
-
-hello()
 
 if __name__ == '__main__':
     print("Starting the EasyLisp web server...")
