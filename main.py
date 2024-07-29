@@ -370,14 +370,14 @@ def eval(x, env=global_env):
         op, *args = x
         op = str(op)
         
-        if op == '`':  # Quasiquotation
+        if op == 'quote':          # quotation
+            return args[0] if args else None
+        elif op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
         elif op == ',':  # Unquote
             if isinstance(args[0], Symbol):
                 return eval(str(args[0]), env)
             return eval(args[0], env)
-        elif op == 'quote':          # quotation
-            return args[0] if args else None
         elif op == 'env':
             print(env)
         elif op == 'begin':
