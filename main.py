@@ -763,16 +763,15 @@ def repl(prompt='easylisp> '):
           (let ((var (car bindings))
                 (expr (cadr bindings)))
             (let ((result `(let loop ()
-                             (let ((temp ,expr))
-                               (if temp
+                             (let ((,var ,expr))
+                               (if ,var
                                    (begin
-                                     (let ((,var temp))
-                                       ,@body)
+                                     ,@body
                                      (loop))
                                    'done)))))
               (print "Macro expansion:")
               (print (format "  {}" (lispstr result)))
-              (eval result (current-environment))))
+              result))
           (list 'quote (list 'error "while-let requires a binding list with exactly two elements"))))
     ''')))
     
