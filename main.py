@@ -519,6 +519,12 @@ def eval(x, env=global_env):
             for exp in args[:-1]:
                 eval(exp, env)
             return eval(args[-1], env)
+        elif op == 'let':          # local bindings
+            bindings, *body = args
+            local_env = Env(outer=env)
+            for var, exp in bindings:
+                local_env[str(var)] = eval(exp, env)
+            return eval(['begin'] + body, local_env)
         elif op == 'define-route': # Special handling for define-route
             if len(args) != 2:
                 raise LispError("define-route requires exactly 2 arguments")
