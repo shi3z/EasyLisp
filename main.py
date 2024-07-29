@@ -766,14 +766,14 @@ def repl(prompt='easylisp> '):
             (print (format "  expr: {}" expr))
             (let ((result `(let loop ()
                              (let ((,var ,expr))
-                               (print (format "Debug: var = {}, expr = {}" ',var ,expr))
+                               (print (format "Debug: var = {}, expr = {}" ',var ',expr))
                                (if ,var
                                    (begin
                                      ,@body
                                      (loop))
                                    'done)))))
               (print "Macro expansion:")
-              (print (format "  {}" (lispstr result)))
+              (print (format "  {}" result))
               result))
           (begin
             (print "Error: Invalid bindings")
@@ -784,8 +784,8 @@ def repl(prompt='easylisp> '):
     eval(parse(tokenize('''
     (define count 5)
     (print (format "Starting while-let example with count = {}" count))
-    (while-let (x (> count 0))
-      (print (format "Inside loop: count = {}" count))
+    (while-let (x (begin (print (format "Evaluating condition: count = {}" count)) (> count 0)))
+      (print (format "Inside loop: x = {}, count = {}" x count))
       (set! count (- count 1)))
     (print (format "After while-let: count = {}" count))
     ''')))
