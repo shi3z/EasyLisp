@@ -314,8 +314,8 @@ class Macro:
             print(f"elem:{elem}")
             if isinstance(elem, list):
                 result.append(self.quasiquote(elem, env))
-            elif isinstance(elem, Symbol) and str(elem).startswith(','):
-                result.append(eval(Sym(str(elem)[1:]), env))
+            elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol(','):
+                result.append(eval(elem[1], env))
             else:
                 result.append(elem)
         return result
@@ -742,8 +742,8 @@ def quasiquote(x, env):
                 result.append(eval(elem, env))
             else:
                 result.append(quasiquote(elem, env))
-        elif isinstance(elem, Symbol) and str(elem).startswith(','):
-            result.append(eval(Sym(str(elem)[1:]), env))
+        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote'):
+            result.append(eval(elem[1], env))
         else:
             result.append(elem)
     return result
