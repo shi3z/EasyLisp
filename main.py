@@ -855,6 +855,7 @@ def repl(prompt='easylisp> '):
     # Define a simple increment macro
     eval(parse(tokenize('''
     (define-macro (increment var amount)
+      ;; `var` と `amount` を展開して、変数 `var` の値を `amount` だけ増加させるコードを生成します。
       `(set! ,var (+ ,var ,amount)))
     ''')))
 
