@@ -426,7 +426,7 @@ def unquote(x, env):
         return x
 
         elif op == ',':  # Unquote
-            return unquote(args[0], env)
+            return eval(args[0], env)
         elif op == 'env':
             print(env)
         elif op == 'begin':
@@ -658,10 +658,10 @@ def quasiquote(x, env):
 def quasiquote(x, env):
     if not isinstance(x, list):
         return x
-    if len(x) == 2 and x[0] == 'unquote':
+    if len(x) == 2 and x[0] == Symbol('unquote'):
         return eval(x[1], env)
     return [quasiquote(elem, env) if isinstance(elem, list) else
-            eval(elem[1], env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == 'unquote'
+            eval(elem[1], env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote')
             else elem
             for elem in x]
 
