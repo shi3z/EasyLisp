@@ -775,7 +775,8 @@ def repl(prompt='easylisp> '):
               (print "Macro expansion:")
               (print (format "  {}" result))
               (print "Expanded program:")
-              (print (lispstr result))
+              (print result)
+              print(f"Python equivalent:\n{lispstr(result)}")
               result))
           (begin
             (print "Error: Invalid bindings")
