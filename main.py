@@ -768,11 +768,9 @@ def repl(prompt='easylisp> '):
             (print (format "  var: {}" var))
             (print (format "  expr: {}" expr))
             (let ((result `(let loop ((,var ,expr))
-                             (if ,var
-                                 (begin
-                                   ,@body
-                                   (loop ,expr))
-                                 'done))))
+                             (when ,var
+                               ,@body
+                               (loop ,expr)))))
               (print "Macro expansion:")
               (print (format "  {}" result))
               result))
