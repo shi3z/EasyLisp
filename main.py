@@ -386,6 +386,7 @@ async def run_async_functions(*funcs):
 
 
 def eval(x, env=global_env):
+    print(x)
     """Evaluate an expression in an environment."""
     try:
         if isinstance(x, str):  # 定数リテラル
