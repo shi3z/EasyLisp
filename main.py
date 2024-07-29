@@ -276,6 +276,8 @@ class Macro:
 
     def expand(self, x, env):
         try:
+            print(x)
+            print(type(x))
             if isinstance(x, Symbol):
                 print(f"Expanding symbol: {x}")  # Debug output
                 found_env = env.find(str(x))
@@ -416,7 +418,8 @@ def unquote(x, env):
         return x
 
 def eval(x, env=global_env, macro=False):
-    #print(x)
+    print(f"Macro:{macro}")
+    print(x)
     """Evaluate an expression in an environment."""
     try:
         #print(f"Evaluating: {x} in environment: {env}")  # Debug output
@@ -592,7 +595,7 @@ def eval(x, env=global_env, macro=False):
             proc = eval(x[0], env)
             if isinstance(proc, Macro):
                 expanded = proc(*x[1:])
-                print("====")
+                print("====expanded")
                 print(expanded)
                 return eval(expanded, env, macro=True)  # Evaluate the expanded macro with macro flag
             elif asyncio.iscoroutine(x[0]):
