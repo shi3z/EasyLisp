@@ -196,7 +196,7 @@ def add_globals(env):
         'xor': lambda x, y: bool(x) != bool(y),
         'begin': lambda *x: x[-1],
         'car': lambda x: x[0], 'cdr': lambda x: x[1:], 'cons': lambda x,y: [x] + y,
-        'cadr': lambda x: x[1], 'caar': lambda x: x[0][0], 
+        'cadr': lambda x: x[1] if len(x) > 1 else None, 'caar': lambda x: x[0][0], 
         'caddr': lambda x: x[2], 'caadr': lambda x: x[1][0],
         'eq?': op.is_, 'equal?': op.eq, 'length': len, 'list': lambda *x: list(x),
         'list?': lambda x: isinstance(x, list), 'map': map, 'max': max,
