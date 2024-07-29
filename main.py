@@ -672,19 +672,17 @@ def quasiquote(x, env):
         return x
     result = []
     for elem in x:
-        if isinstance(elem, Symbol) and str(elem).startswith(','):
-            var_name = str(elem)[1:]
-            found_env = env.find(var_name)
-            if found_env is not None:
-                result.append(found_env[var_name])
+        if isinstance(elem, list) and len(elem) > 0:
+            if elem[0] == Symbol(','):
+                result.append(eval(elem[1], env))
+            elif elem[0] == Symbol('unquote'):
+                result.append(eval(elem[1], env))
+            elif elem[0] == Symbol('+'):
+                result.append(eval(elem, env))
             else:
-                raise LispError(f"Symbol '{var_name}' not found in environment")
-        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote'):
-            result.append(eval(elem[1], env))
-        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('+'):
-            result.append(eval(elem, env))
+                result.append(quasiquote(elem, env))
         else:
-            result.append(quasiquote(elem, env))
+            result.append(elem)
     return result
 
 
