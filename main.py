@@ -791,10 +791,11 @@ def repl(prompt='easylisp> '):
       (if (and (list? bindings) (= (length bindings) 2))
           (let ((var (car bindings))
                 (expr (cadr bindings)))
-            `(let loop ((,var ,expr))
-               (when ,var
-                 ,@body
-                 (loop ,expr))))
+            `(let loop ()
+               (let ((,var ,expr))
+                 (when ,var
+                   ,@body
+                   (loop)))))
           (error "while-let requires a binding list with exactly two elements")))
     ''')))
     
