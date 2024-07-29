@@ -520,9 +520,13 @@ def eval(x, env=global_env):
 
         elif op == 'debug': 
             print(env)
-        elif op == 'lambda':       # procedure
-            (parms, body) = args
-            return Procedure(parms, ['begin'] + body, env)
+        elif op == 'lambda':  # procedure
+            if len(args) != 2:
+                raise LispError("lambda requires exactly 2 arguments")
+            parms, body = args
+            if not isinstance(parms, list):
+                raise LispError("lambda parameters should be a list")
+            return Procedure(parms, ['begin'] + [body], env)
         elif op == 'begin':        # sequence
             for exp in args[:-1]:
                 eval(exp, env)
