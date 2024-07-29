@@ -767,13 +767,12 @@ def repl(prompt='easylisp> '):
                 (expr (cadr bindings)))
             (print (format "  var: {}" var))
             (print (format "  expr: {}" expr))
-            (let ((result `(let loop ()
-                             (let ((,var ,expr))
-                               (if ,var
-                                   (begin
-                                     ,@body
-                                     (loop))
-                                   'done)))))
+            (let ((result `(let loop ((,var ,expr))
+                             (if ,var
+                                 (begin
+                                   ,@body
+                                   (loop ,expr))
+                                 'done))))
               (print "Macro expansion:")
               (print (format "  {}" result))
               result))
