@@ -768,7 +768,6 @@ def repl(prompt='easylisp> '):
             (print (format "  expr: {}" expr))
             (let ((result `(let loop ()
                              (let ((,var ,expr))
-                               (print (format "Debug: var = {}, expr = {}" ',var ',expr))
                                (if ,var
                                    (begin
                                      ,@body
@@ -776,8 +775,6 @@ def repl(prompt='easylisp> '):
                                    'done)))))
               (print "Macro expansion:")
               (print (format "  {}" result))
-              (print "Expanded program:")
-              (print (lispstr result))
               result))
           (begin
             (print "Error: Invalid bindings")
