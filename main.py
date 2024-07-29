@@ -389,14 +389,20 @@ def eval(x, env=global_env):
             exp = (conseq if eval(test, env) else alt)
             return eval(exp, env)
         elif op == 'define':       # definition
-            (symbol, exp) = args
+            if len(args) < 2:
+                raise LispError("define requires at least 2 arguments")
+            symbol = args[0]
             if isinstance(symbol, list):  # Function definition
                 fname = f"{symbol[0]}"
                 params = symbol[1:]
-                func = Procedure(params, exp, env, name=str(fname))  # Pass exp directly as body
+                exp = args[1:]
+                func = Procedure(params, ['begin'] + exp, env, name=str(fname))
                 env[fname] = func
                 return func
             else:  # Variable definition
+                if len(args) != 2:
+                    raise LispError("Variable definition requires exactly 2 arguments")
+                exp = args[1]
                 env[f"{symbol}"] = eval(exp, env)
         elif op == 'define-macro':  # macro definition
             (symbol, exp) = args
