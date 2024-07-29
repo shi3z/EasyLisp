@@ -447,7 +447,7 @@ def eval(x, env=global_env):
             (test, conseq, alt) = args
             exp = (conseq if eval(test, env) else alt)
             return eval(exp, env)
-        elif op == 'define':       # definition
+        elif op == 'define':  # definition
             if len(args) < 2:
                 raise LispError("define requires at least 2 arguments")
             symbol = args[0]
@@ -455,6 +455,14 @@ def eval(x, env=global_env):
                 fname = str(symbol[0])
                 params = symbol[1:]
                 body = args[1:]
+                func = Procedure(params, ['begin'] + body, env, name=fname)
+                env[fname] = func
+                return func
+            elif isinstance(args[1], list) and args[1][0] == 'lambda':  # Lambda function definition
+                fname = str(symbol)
+                lambda_expr = args[1]
+                params = lambda_expr[1]
+                body = lambda_expr[2:]
                 func = Procedure(params, ['begin'] + body, env, name=fname)
                 env[fname] = func
                 return func
