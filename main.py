@@ -358,11 +358,12 @@ def eval(x, env=global_env):
         elif isinstance(x, (int, float, Procedure, Macro)):
             return x
         elif isinstance(x, Symbol):
-            if str(x) in env:
-                return env[str(x)]
-            if str(x) in global_env:
-                return global_env[str(x)]
-            raise LispError(f"Symbol {x} not found in environment")
+            symbol_str = str(x)
+            if symbol_str in env:
+                return env[symbol_str]
+            if symbol_str in global_env:
+                return global_env[symbol_str]
+            raise LispError(f"Symbol '{symbol_str}' not found in environment")
         elif not isinstance(x, list):
             return x
 
