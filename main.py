@@ -818,9 +818,10 @@ def repl(prompt='easylisp> '):
     # Define a simple macro for testing
     eval(parse(tokenize('''
     (define-macro (simple-macro x)
-      `(begin
-         (print (format "Inside simple-macro: x = {}" ,x))
-         x))
+      `(let ((val ,x))
+         (begin
+           (print (format "Inside simple-macro: x = {}" val))
+           val)))
     ''')))
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
