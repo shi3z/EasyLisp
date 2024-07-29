@@ -307,15 +307,15 @@ class Macro:
         print(x)
         if not isinstance(x, list):
             return x
-        if len(x) > 0 and x[0] == Symbol('unquote'):
-            return eval(x[1], env)
         result = []
         for elem in x:
             print(f"elem:{elem}")
-            if isinstance(elem, list):
+            if isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote'):
+                result.append(eval(elem[1], env))
+            elif isinstance(elem, list):
                 result.append(self.quasiquote(elem, env))
-            elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol(','):                
-                 result.append(eval(elem[1], env))   
+            elif isinstance(elem, Symbol) and str(elem).startswith(','):
+                result.append(eval(Sym(str(elem)[1:]), env))
             else:
                 result.append(elem)
         return result
