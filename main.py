@@ -7,7 +7,9 @@ import json
 import traceback
 import asyncio
 from functools import partial
-
+import subprocess
+import shlex
+import sys
 
 global_event_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(global_event_loop)
@@ -62,8 +64,11 @@ def call_chatgpt(prompt):
     else:
         return f"Error: {response.status_code}, {response.text}"
 
-async def async_call_chatgpt(prompt):
+async def async_call_chatgpt(prompt,engine="gpt-4o-mini"):
+    print(f"async_call_chatgpt:{prompt}")
     api_key = os.getenv("OPENAI_API_KEY")
+    print(engine)
+
     if not api_key:
         api_key = input("Enter your OpenAI API key: ")
         os.environ["OPENAI_API_KEY"] = api_key
@@ -152,6 +157,25 @@ def lisp_sleep(seconds):
     time.sleep(float(seconds))
     print("Sleep finished")  # デバッグ出力
 
+def exec_command(command):
+    try:
+        args = shlex.split(command)
+        result = subprocess.run(args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return result.stdout.decode('utf-8').strip()  # 結果の文字列を返す
+    except subprocess.CalledProcessError as e:
+        return f"Error: {e.stderr.decode('utf-8')}"
+
+def load_file(file_path):
+    with open(file_path, 'r') as file:
+        return file.read()
+
+def execute_file(file_path, env):
+    script = load_file(file_path)
+    tokens = tokenize(script)
+    parsed = parse(tokens)  # 仮定: parse はトークンリストを受け取り、抽象構文木またはS式リストを返す関数
+    result = eval(parsed, env)  # 仮定: eval はパースされた入力と環境を受け取り、結果を返す関数
+    return result    
+
 def add_globals(env):
     """Add some built-in procedures and variables to the environment."""
     env.update({
@@ -169,6 +193,8 @@ def add_globals(env):
         'object': lambda: LispObject(),
         'sleep':lisp_sleep,
         "llm":async_call_chatgpt,
+        'exec': exec_command,
+        'load': lambda x: execute_file(x, env),
     })
     return env
 
@@ -176,20 +202,15 @@ def add_globals(env):
 global_env = add_globals(Env())
 
 async def hogex(funcs):
-    print("ホゲー")
     tasks=[]
     for func in funcs:
-        print("投げた")
         print(func)
         #tasks.append(asyncio.create_task(async_call_chatgpt("こんにちは")))
         tasks.append(asyncio.create_task(func.async_call()))
-        print("hoge-")
     #results = await asyncio.gather(*tasks)
     results=[]
     for task in tasks:
         results.append(await task)
-    print(results)
-    print("げろー")
     return results
 
 class Procedure:
@@ -198,13 +219,12 @@ class Procedure:
         self.parms, self.body, self.env, self.name = parms, body, env, name
 
     def __call__(self, *args):
-        print("プロシージャ")
         new_env = Env(self.parms, args, self.env)
         try:
+            print(f"Procedure call")
             result =  eval(self.body, new_env)
             if asyncio.iscoroutine(result):
-                print("コルーチン!!!!")
-                result = eval(self.body, new_env)
+                result = eval_async(self.body, new_env)
                 return result 
             return result
         except Exception as e:
@@ -213,18 +233,22 @@ class Procedure:
             raise
 
     async def async_call(self, *args):
-        print("プロシージャ　コルーチン")
         new_env = Env(self.parms, args, self.env)
         try:
+            print(f"Procedure async_call")
+            print("async_call")
             print(self.body)
             if str(self.body[0])=="llm":
-                print("async_call_chatgpt")
+                #print("async_call_chatgpt")
                 result = await async_call_chatgpt(self.body[1])
                 return result
 
-            result =  eval_async(self.body, new_env)
+            result = eval(self.body, new_env)
             if asyncio.iscoroutine(result):
-                print("コルーチン!!!!")
+                print("coroutine!!!")
+            else:
+                result =  eval_async(self.body, new_env)
+
             return result
         except Exception as e:
             print(f"Error in procedure execution: {e}")  # デバッグ出力
@@ -404,18 +428,17 @@ def eval(x, env=global_env):
 
     else:                      # procedure call
         if asyncio.iscoroutine(x[0]):
-            print("x[0]がコルーチン")
             proc = eval(x[0], env)
             vals = [eval(arg, env) for arg in args]
-            print(f"Calling {proc} with args {vals}") 
+            #print(f"Calling {proc} with args {vals}") 
             result = global_event_loop.run_until_complete(proc(*vals))
         else:
             proc = eval(x[0], env)
             vals = [eval(arg, env) for arg in args]
-            print(f"Calling {proc} with args {vals}") 
+            #print(f"Calling {proc} with args {vals}") 
             result = proc(*vals)
         if asyncio.iscoroutine(result):
-            print("Coroutine detected, running it")  # デバッグ出力
+            #print("Coroutine detected, running it")  # デバッグ出力
             return global_event_loop.run_until_complete(result)
         return result
 
@@ -427,6 +450,7 @@ async def eval_async(x, env=global_env):
 
 
 def parse(tokens):
+
     if not tokens:  # リストが空の場合をチェックする
         raise SyntaxError('unexpected EOF')
     
@@ -459,11 +483,11 @@ def parse_atom(token):
 
 def tokenize(s):
     """Convert a string into a list of tokens."""
-    #return s.replace('(',' ( ').replace(')',' ) ').split()
-    #return re.findall(r'\(|\)|[^\s()]+', s)
-    #return re.findall(r'\"(?:\\.|[^"])*\"|[()]|[^\s()]+', s)
-    return re.findall(r'\"\"\"(?:\\.|[^\"])*\"\"\"|[()]|[^\s()]+', s)
-
+    # トリプルクォート文字列、ダブルクォート文字列、括弧、その他のトークンを識別する正規表現
+    token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()]|[^\s()]+'
+    tokens = re.findall(token_pattern, s)
+    return tokens
+    
 def read_from_tokens(tokens):
     """Read an expression from a sequence of tokens."""
     if len(tokens) == 0:
@@ -649,4 +673,7 @@ if __name__ == '__main__':
     print("You can define new functions and routes while the server is running.")
     print("Use (define-route <path> <function-name>) to add new routes dynamically.")
     print("Type 'exit' or 'quit' to end the session.")
+    if len(sys.argv)>1:
+        file_path = sys.argv[1]
+        result = execute_file(file_path, global_env)
     repl()
