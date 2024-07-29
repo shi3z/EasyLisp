@@ -405,11 +405,14 @@ def eval(x, env=global_env):
                 exp = args[1]
                 env[f"{symbol}"] = eval(exp, env)
         elif op == 'define-macro':  # macro definition
-            (symbol, exp) = args
+            if len(args) < 2:
+                raise LispError("define-macro requires at least 2 arguments")
+            symbol = args[0]
             if isinstance(symbol, list):  # Macro definition
                 mname = f"{symbol[0]}"
                 params = symbol[1:]
-                macro = Macro(params, exp, env, name=str(mname))
+                body = args[1:]
+                macro = Macro(params, ['begin'] + body, env, name=str(mname))
                 env[mname] = macro
                 return macro
             else:
