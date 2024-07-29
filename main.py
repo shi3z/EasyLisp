@@ -443,9 +443,13 @@ def eval(x, env=global_env):
             for exp in args[:-1]:
                 eval(exp, env)
             return eval(args[-1], env)
-        elif op == 'if':           # conditional
+        elif op == 'if':  # conditional
             (test, conseq, alt) = args
-            exp = (conseq if eval(test, env) else alt)
+            test_result = eval(test, env)
+            if isinstance(test_result, bool):
+                exp = (conseq if test_result else alt)
+            else:
+                exp = (conseq if test_result else alt)
             return eval(exp, env)
         elif op == 'define':  # definition
             if len(args) < 2:
