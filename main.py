@@ -760,13 +760,13 @@ def repl(prompt='easylisp> '):
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
       (print "Macro input:")
-      (print (format "  bindings: {}" bindings))
-      (print (format "  body: {}" body))
+      (print (format "  bindings: {}" (list 'quote bindings)))
+      (print (format "  body: {}" (list 'quote body)))
       (if (and (list? bindings) (= (length bindings) 2))
           (let ((var (car bindings))
                 (expr (cadr bindings)))
-            (print (format "  var: {}" var))
-            (print (format "  expr: {}" expr))
+            (print (format "  var: {}" (list 'quote var)))
+            (print (format "  expr: {}" (list 'quote expr)))
             (let ((result `(let loop ()
                              (let ((,var ,expr))
                                (if ,var
@@ -775,7 +775,7 @@ def repl(prompt='easylisp> '):
                                      (loop))
                                    'done)))))
               (print "Macro expansion:")
-              (print (format "  {}" result))
+              (print (format "  {}" (list 'quote result)))
               result))
           (begin
             (print "Error: Invalid bindings")
