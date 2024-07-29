@@ -586,7 +586,7 @@ def quasiquote(x, env):
     if len(x) == 2 and x[0] == 'unquote':
         return eval(x[1], env)
     return [quasiquote(elem, env) if isinstance(elem, list) else
-            eval(elem, env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == 'unquote'
+            eval(elem, env) if isinstance(elem, Symbol) and str(elem) == 'unquote'
             else elem
             for elem in x]
 
