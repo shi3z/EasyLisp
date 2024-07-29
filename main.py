@@ -752,16 +752,15 @@ def repl(prompt='easylisp> '):
             (let ((result `(let loop ()
                              (let ((temp ,expr))
                                (if temp
-                                   (let ((,var temp))
-                                     ,@body
+                                   (begin
+                                     (let ((,var temp))
+                                       ,@body)
                                      (loop))
                                    'done)))))
               (print "Macro expansion:")
               (print (format "  {}" (lispstr result)))
               result))
-          (begin
-            (print "Error: Invalid bindings")
-            (list 'error "while-let requires a binding list with exactly two elements"))))
+          (list 'error "while-let requires a binding list with exactly two elements")))
     ''')))
     
     # Example usage of while-let macro with debug output
