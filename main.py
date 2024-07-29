@@ -572,6 +572,7 @@ def eval(x, env=global_env, macro=False):
                 value = eval(exp, env)
                 return set_nested_property(obj, props, value)
             else:
+                print(f"symbol:{symbol} / {type(symbol)}")
                 env_found = env.find(symbol)
                 if env_found is not None:
                     value = eval(exp, env)
@@ -649,7 +650,7 @@ def parse(tokens):
             return [Symbol('unquote-splicing'), Symbol(token[2:])]
         elif token == ',':
             return Symbol(',')
-        return [Symbol(token)]
+        return Symbol(token)
     else:
         return parse_atom(token)
 
@@ -675,15 +676,12 @@ def parse_atom(token):
         except ValueError:
             return Symbol(token)
 
-def tokenize(s):
-    """Convert a string into a list of tokens."""
-    # コメントを無視するために、コメント部分を削除する
-    s = re.sub(r';;.*', '', s)
-    # トリプルクォート文字列、ダブルクォート文字列、括弧、バッククォート、カンマ、クォート、その他のトークンを識別する正規表現
-    token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()`,\']|\'[^\']*\'|,@|,[^,\s()`,\']+|[^,\s()`,\']+'
-    tokens = re.findall(token_pattern, s)
-    return tokens
-    
+def tokenize(s):                                                                                     
+     s = re.sub(r';;.*', '', s)                                                                      
+     token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()``\']|\'[^\']*\'|,@|,[^,\s()``\']+|[^,\s()``\']+'  
+     tokens = re.findall(token_pattern, s)                                                            
+     return tokens     
+
 def read_from_tokens(tokens):
     """Read an expression from a sequence of tokens."""
     if len(tokens) == 0:
