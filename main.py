@@ -561,9 +561,11 @@ def eval(x, env=global_env):
                 if env_found is not None:
                     value = eval(exp, env)
                     env_found[symbol] = value
+                    print(f"set!{value}")
                     return value
                 else:
                     value = env[str(symbol)]=eval(exp,env)
+                    print(f"set!{value}")
                     return value
 
         elif op == 'dot':
@@ -856,11 +858,6 @@ def repl(prompt='easylisp> '):
       `(set! ,var (+ ,var ,amount)))
     ''')))
 
-    # Define a simple increment macro
-    eval(parse(tokenize('''
-    (define-macro (increment var amount)
-      `(set! ,var (+ ,var ,amount)))
-    ''')))
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
       (if (and (list? bindings) (= (length bindings) 2))
