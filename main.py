@@ -392,6 +392,14 @@ async def run_async_functions(*funcs):
     return results
 
 
+def unquote(x, env):
+    if isinstance(x, Symbol):
+        return env.find(str(x))[str(x)]
+    elif isinstance(x, list):
+        return [unquote(elem, env) for elem in x]
+    else:
+        return x
+
 def eval(x, env=global_env):
     print(x)
     """Evaluate an expression in an environment."""
@@ -417,14 +425,6 @@ def eval(x, env=global_env):
             return args[0] if args else None
         elif op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
-def unquote(x, env):
-    if isinstance(x, Symbol):
-        return env.find(str(x))[str(x)]
-    elif isinstance(x, list):
-        return [unquote(elem, env) for elem in x]
-    else:
-        return x
-
         elif op == ',':  # Unquote
             return eval(args[0], env)
         elif op == 'env':
