@@ -613,6 +613,8 @@ def parse_atom(token):
 
 def tokenize(s):
     """Convert a string into a list of tokens."""
+    # コメントを無視するために、コメント部分を削除する
+    s = re.sub(r';;.*', '', s)
     # トリプルクォート文字列、ダブルクォート文字列、括弧、バッククォート、カンマ、クォート、その他のトークンを識別する正規表現
     token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()`,\']|\'[^\']*\'|[^\s()`,\']+'
     tokens = re.findall(token_pattern, s)
