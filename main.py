@@ -261,17 +261,24 @@ class Macro:
             raise
 
     def expand(self, x, env):
-        if isinstance(x, Symbol):
-            found_env = env.find(str(x))
-            return found_env[str(x)] if found_env else x
-        elif not isinstance(x, list):
-            return x
-        elif x[0] == 'quote':
-            return x
-        elif x[0] == '`':
-            return self.quasiquote(x[1], env)
-        else:
-            return [self.expand(elem, env) for elem in x]
+        try:
+            if isinstance(x, Symbol):
+                found_env = env.find(str(x))
+                return found_env[str(x)] if found_env else x
+            elif not isinstance(x, list):
+                return x
+            elif len(x) == 0:
+                return x
+            elif x[0] == 'quote':
+                return x
+            elif x[0] == '`':
+                return self.quasiquote(x[1], env)
+            else:
+                return [self.expand(elem, env) for elem in x]
+        except Exception as e:
+            print(f"Error in expand: {e}")
+            print(f"Current expression: {x}")
+            raise
 
     def quasiquote(self, x, env):
         if not isinstance(x, list):
