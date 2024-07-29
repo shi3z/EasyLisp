@@ -586,6 +586,8 @@ def parse_atom(token):
         return ['dot', parse_atom(parts[0])] + [Sym(part) for part in parts[1:]]
     if token[0]=='"' or token[0]=="'":
         return str(token)
+    if token.startswith('そもそも,'):
+        return Symbol(token)
     try:
         return int(token)
     except ValueError:
