@@ -525,6 +525,8 @@ def eval(x, env=global_env):
         traceback_lines = traceback.format_tb(exc_traceback)
         for line in traceback_lines:
             print(line)
+        if isinstance(x, list) and x and x[0] == 'error':
+            return x  # エラーメッセージをそのまま返す
         raise LispError(f"Evaluation error: {e}")
 
 async def eval_async(x, env=global_env):
@@ -760,7 +762,7 @@ def repl(prompt='easylisp> '):
               (print "Macro expansion:")
               (print (format "  {}" (lispstr result)))
               result))
-          (list 'error "while-let requires a binding list with exactly two elements")))
+          (list 'quote (list 'error "while-let requires a binding list with exactly two elements"))))
     ''')))
     
     # Example usage of while-let macro with debug output
