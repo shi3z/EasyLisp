@@ -850,6 +850,12 @@ def repl(prompt='easylisp> '):
                val))
          (loop ,(car x))))
     ''')))
+
+    # Define a simple increment macro
+    eval(parse(tokenize('''
+    (define-macro (increment var amount)
+      `(set! ,var (+ ,var ,amount)))
+    ''')))
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
       (if (and (list? bindings) (= (length bindings) 2))
