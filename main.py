@@ -258,6 +258,8 @@ class Macro:
         new_env = Env(self.parms, args, self.env)
         try:
             expanded = self.expand(self.body, new_env)
+            print("Expand macro")
+            print(expanded)
             return eval(expanded, self.env)
         except Exception as e:
             print(f"Error in macro expansion: {e}")  # デバッグ出力
