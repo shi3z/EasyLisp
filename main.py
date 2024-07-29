@@ -839,12 +839,11 @@ def repl(prompt='easylisp> '):
     eval(parse(tokenize('''
     (define-macro (simple-macro x)
       `(begin
-         (define loop
-           (lambda (val)
-             (print (format "Inside simple-macro: x = {}" val))
-             (if (> val 0)
-                 (loop (- val 1))
-                 val)))
+         (define (loop val)
+           (print (format "Inside simple-macro: x = {}" val))
+           (if (> val 0)
+               (loop (- val 1))
+               val))
          (loop ,x)))
     ''')))
     eval(parse(tokenize('''
