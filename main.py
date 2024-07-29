@@ -417,10 +417,16 @@ def eval(x, env=global_env):
             return args[0] if args else None
         elif op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
+def unquote(x, env):
+    if isinstance(x, Symbol):
+        return env.find(str(x))[str(x)]
+    elif isinstance(x, list):
+        return [unquote(elem, env) for elem in x]
+    else:
+        return x
+
         elif op == ',':  # Unquote
-            if isinstance(args[0], Symbol):
-                return eval(str(args[0]), env)
-            return eval(args[0], env)
+            return unquote(args[0], env)
         elif op == 'env':
             print(env)
         elif op == 'begin':
