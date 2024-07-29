@@ -595,6 +595,8 @@ def parse_atom(token):
     if token[0]=='"' or token[0]=="'":
         return str(token)
     if token.startswith(','):
+        if token.startswith(',@'):
+            return ['unquote-splicing', Symbol(token[2:])]
         return Symbol(token)
     if token.startswith('@'):
         return ['unquote', Symbol(token[1:])]  # @symbolname を (unquote symbolname) として扱う
@@ -673,7 +675,12 @@ def quasiquote(x, env):
             return unquote_splicing(x[1], env)
     result = []
     for elem in x:
-        if isinstance(elem, list) and len(elem) == 2 and elem[0] == Symbol('unquote-splicing'):
+        if isinstance(elem, Symbol) and str(elem).startswith(','):
+            var_name = str(elem)[1:]
+            result.append(env.find(var_name)[var_name])
+        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote'):
+            result.append(eval(elem[1], env))
+        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote-splicing'):
             result.extend(unquote_splicing(elem[1], env))
         else:
             result.append(quasiquote(elem, env))
