@@ -573,8 +573,8 @@ def parse_atom(token):
 
 def tokenize(s):
     """Convert a string into a list of tokens."""
-    # トリプルクォート文字列、ダブルクォート文字列、括弧、バッククォート、カンマ、その他のトークンを識別する正規表現
-    token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()`,]|[^\s()`,]+'
+    # トリプルクォート文字列、ダブルクォート文字列、括弧、バッククォート、カンマ、クォート、その他のトークンを識別する正規表現
+    token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()`,\']|\'[^\']*\'|[^\s()`,\']+'
     tokens = re.findall(token_pattern, s)
     return tokens
     
@@ -599,6 +599,8 @@ def read_from_tokens(tokens):
 def atom(token):
     if token.startswith('"') and token.endswith('"'):
         return token[1:-1]  # Remove quotes for string literals
+    if token.startswith("'") and token.endswith("'"):
+        return Symbol(token[1:-1])  # Handle quoted symbols
     if '.' in token:
         parts = token.split('.')
         return ['dot', atom(parts[0])] + [Sym(part) for part in parts[1:]]
