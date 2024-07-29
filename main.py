@@ -739,8 +739,8 @@ def repl(prompt='easylisp> '):
     # Define the while-let macro
     eval(parse(tokenize('''
     (define-macro (while-let bindings body)
-      (let ((var (car (car bindings)))
-            (expr (car (cdr (car bindings)))))
+      (let ((var (car bindings))
+            (expr (cadr bindings)))
         `(let loop ()
            (let ((,var ,expr))
              (if ,var
