@@ -10,6 +10,7 @@ from functools import partial
 import subprocess
 import shlex
 import sys
+import traceback
 
 global_event_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(global_event_loop)
@@ -103,7 +104,7 @@ class Symbol:
         self.name = name
 
     def __repr__(self):
-        return self.name
+        return str(self.name)
 
     def __str__(self):
         return self.name
@@ -123,6 +124,8 @@ def Sym(s, symbol_table={}):
 
 class Env(dict):
     def __init__(self, parms=(), args=(), outer=None):
+        for i in range(len(parms)):
+            parms[i]=str(parms[i])
         self.update(zip(parms, args))
         self.outer = outer
     def find(self, var):
@@ -201,6 +204,17 @@ def add_globals(env):
 
 global_env = add_globals(Env())
 
+def string_append(*args):
+    return ''.join(args)
+
+global_env.update({'string-append': string_append})
+
+def format_string(format_str, *args):
+    print(args)
+    return format_str.format(*args)
+
+global_env.update({'format': format_string})
+
 async def hogex(funcs):
     tasks=[]
     for func in funcs:
@@ -221,7 +235,6 @@ class Procedure:
     def __call__(self, *args):
         new_env = Env(self.parms, args, self.env)
         try:
-            print(f"Procedure call")
             result =  eval(self.body, new_env)
             if asyncio.iscoroutine(result):
                 result = eval_async(self.body, new_env)
@@ -258,7 +271,9 @@ class Procedure:
     def __str__(self):
         return f"#<procedure {self.name}>" if self.name else "#<procedure>"
 
-
+    def __repr__(self):
+        return f"Procedure({self.parms}, {self.body}, {self.env}, {self.name})"
+ 
 
 def set_nested_property(obj, props, value):
     if not isinstance(obj, LispObject):
@@ -321,126 +336,140 @@ async def run_async_functions(*funcs):
 
 
 def eval(x, env=global_env):
-    print(x)
+    try:
 
-    """Evaluate an expression in an environment."""
-    if isinstance(x, str):  # 定数リテラル
-        if x[0]=='"':
-            return str(x[1:-1])
-        return x
-    elif isinstance(x, (int, float, str)):  # 定数リテラル
-        return x
-    elif isinstance(x, Procedure):
-        return x 
-    elif isinstance(x, Symbol):
-        if str(x) in env:
-            return env[str(x)] 
-        if str(x) in global_env:
-            return global_env[str(x)] 
-    elif not isinstance(x, list):  # constantliteral
-        return x                    
-    op, *args = x
-    op=str(op)
-    if op == 'quote':          # quotation
-        return args[0]
-    elif op == 'env':
-        print(env)
-    elif op == 'begin':
-        for exp in args[:-1]:
-            eval(exp, env)
-        return eval(args[-1], env)
-    elif op == 'if':           # conditional
-        (test, conseq, alt) = args
-        exp = (conseq if eval(test, env) else alt)
-        return eval(exp, env)
-    elif op == 'define':       # definition
-        (symbol, exp) = args
-        if isinstance(symbol, list):  # Function definition
-            fname = f"{symbol[0]}"
-            params = symbol[1:]
-            func = Procedure(params, exp, env, name=str(fname))  # Pass exp directly as body
-            env[fname] = func
-            return func
-        else:  # Variable definition
-            env[f"{symbol}"] = eval(exp, env)
+        """Evaluate an expression in an environment."""
+        if isinstance(x, str):  # 定数リテラル
+            if x[0]=='"':
+                return str(x[1:-1])
+            return x
+        elif isinstance(x, (int, float, str)):  # 定数リテラル
+            return x
+        elif isinstance(x, Procedure):
+            return x 
+        if isinstance(x,Symbol):
+            if str(x) in env:
+                return env[str(x)] 
+            if str(x) in global_env:
+                return global_env[str(x)] 
+            print(f"Symbol {x} not found in env")
+            print(env)
+            exit()
+        elif not isinstance(x, list):  # constantliteral
+            return x 
 
-    elif op == 'parallel':
-        global global_event_loop
-        print("Evaluating parallel")  # デバッグ出力
-        funcs = [eval(arg, env) for arg in args]
-        print(f"Asynccall funcs: {funcs}")  # デバッグ出力
-        #async_funcs = [ lisp_to_async_func(func, env) for func in funcs]
+        if isinstance(x,Symbol):
+            print("x=Symbol")        
+        op, *args = x
+        op=str(op)
+        if op == 'quote':          # quotation
+            return args[0]
+        elif op == 'env':
+            print(env)
+        elif op == 'begin':
+            for exp in args[:-1]:
+                eval(exp, env)
+            return eval(args[-1], env)
+        elif op == 'if':           # conditional
+            (test, conseq, alt) = args
+            exp = (conseq if eval(test, env) else alt)
+            return eval(exp, env)
+        elif op == 'define':       # definition
+            (symbol, exp) = args
+            if isinstance(symbol, list):  # Function definition
+                fname = f"{symbol[0]}"
+                params = symbol[1:]
+                func = Procedure(params, exp, env, name=str(fname))  # Pass exp directly as body
+                env[fname] = func
+                return func
+            else:  # Variable definition
+                env[f"{symbol}"] = eval(exp, env)
 
-        try:
-            results=asyncio.run(hogex(funcs))
-            print(f"Async results {results}")
-            return results
-        except Exception as e:
-            print(f"Error in parallel: {e}")
-            print(e)
-            raise
+        elif op == 'parallel':
+            global global_event_loop
+            print("Evaluating parallel")  # デバッグ出力
+            funcs = [eval(arg, env) for arg in args]
+            print(f"Asynccall funcs: {funcs}")  # デバッグ出力
+            #async_funcs = [ lisp_to_async_func(func, env) for func in funcs]
+
+            try:
+                results=asyncio.run(hogex(funcs))
+                print(f"Async results {results}")
+                return results
+            except Exception as e:
+                print(f"Error in parallel: {e}")
+                print(e)
+                raise
 
 
-    elif op == 'debug': 
-        print(env)
-    elif op == 'lambda':       # procedure
-        (parms, body) = args
-        return Procedure(parms, ['begin'] + body, env)
-    elif op == 'begin':        # sequence
-        for exp in args[:-1]:
-            eval(exp, env)
-        return eval(args[-1], env)
-    elif op == 'define-route': # Special handling for define-route
-        if len(args) != 2:
-            raise LispError("define-route requires exactly 2 arguments")
-        path = args[0]
-        func_name = args[1]
-        if isinstance(func_name, Symbol):
-            func_name = str(func_name)
-        return define_route(path, func_name)
-    elif op == 'set!':
-        print(f"Set! args: {args}")  # デバッグ出力
-        (symbol, exp) = args
-        if isinstance(symbol, list) and symbol[0] == 'dot':
-            obj = eval(symbol[1], env)
-            props = symbol[2:]
-            value = eval(exp, env)
-            return set_nested_property(obj, props, value)
-        else:
-            env_found = env.find(symbol)
-            if env_found is not None:
+        elif op == 'debug': 
+            print(env)
+        elif op == 'lambda':       # procedure
+            (parms, body) = args
+            return Procedure(parms, ['begin'] + body, env)
+        elif op == 'begin':        # sequence
+            for exp in args[:-1]:
+                eval(exp, env)
+            return eval(args[-1], env)
+        elif op == 'define-route': # Special handling for define-route
+            if len(args) != 2:
+                raise LispError("define-route requires exactly 2 arguments")
+            path = args[0]
+            func_name = args[1]
+            if isinstance(func_name, Symbol):
+                func_name = str(func_name)
+            return define_route(path, func_name)
+        elif op == 'set!':
+            print(f"Set! args: {args}")  # デバッグ出力
+            (symbol, exp) = args
+            if isinstance(symbol, list) and symbol[0] == 'dot':
+                obj = eval(symbol[1], env)
+                props = symbol[2:]
                 value = eval(exp, env)
-                env_found[symbol] = value
-                return value
+                return set_nested_property(obj, props, value)
             else:
-                value = env[str(symbol)]=eval(exp,env)
-                return value
+                env_found = env.find(symbol)
+                if env_found is not None:
+                    value = eval(exp, env)
+                    env_found[symbol] = value
+                    return value
+                else:
+                    value = env[str(symbol)]=eval(exp,env)
+                    return value
 
-    elif op == 'dot':
-        obj = eval(args[0], env)
-        for prop in args[1:]:
-            if not isinstance(obj, LispObject):
-                raise LispError(f"Cannot access property '{prop}' of non-object")
-            obj = obj.get(str(prop))
-            if obj is None:
-                raise LispError(f"Undefined property: '{prop}'")
-        return obj
+        elif op == 'dot':
+            obj = eval(args[0], env)
+            for prop in args[1:]:
+                if not isinstance(obj, LispObject):
+                    raise LispError(f"Cannot access property '{prop}' of non-object")
+                obj = obj.get(str(prop))
+                if obj is None:
+                    raise LispError(f"Undefined property: '{prop}'")
+            return obj
 
-    else:                      # procedure call
-        if asyncio.iscoroutine(x[0]):
-            proc = eval(x[0], env)
-            vals = [eval(arg, env) for arg in args]
-            #print(f"Calling {proc} with args {vals}") 
-            result = global_event_loop.run_until_complete(proc(*vals))
-        else:
-            proc = eval(x[0], env)
-            vals = [eval(arg, env) for arg in args]
-            #print(f"Calling {proc} with args {vals}") 
-            result = proc(*vals)
-        if asyncio.iscoroutine(result):
-            #print("Coroutine detected, running it")  # デバッグ出力
-            return global_event_loop.run_until_complete(result)
-        return result
+        else:                      # procedure call
+            if asyncio.iscoroutine(x[0]):
+                proc = eval(x[0], env)
+                vals = [eval(arg, env) for arg in args]
+                #print(f"Calling {proc} with args {vals}") 
+                result = global_event_loop.run_until_complete(proc(*vals))
+            else:
+                proc = eval(x[0], env)
+                vals = [eval(arg, env) for arg in args]
+                #print(f"Calling {proc} with args {vals}") 
+                result = proc(*vals)
+            if asyncio.iscoroutine(result):
+                #print("Coroutine detected, running it")  # デバッグ出力
+                return global_event_loop.run_until_complete(result)
+            return result
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print(f"Error in eval: {e}")
+        print(f"x={x}/{type(x)}")
+        traceback_lines = traceback.format_tb(exc_traceback)
+        for line in traceback_lines:
+            print(line)        
+        exit()
 
 async def eval_async(x, env=global_env):
     result = eval(x, env)
