@@ -376,6 +376,9 @@ def eval(x, env=global_env):
             print("x=Symbol")        
         op, *args = x
         op=str(op)
+        
+        if op == '`':  # Quasiquotation
+            return quasiquote(args[0], env)
         if op == 'quote':          # quotation
             return args[0]
         elif op == 'env':
@@ -545,8 +548,8 @@ def parse_atom(token):
 
 def tokenize(s):
     """Convert a string into a list of tokens."""
-    # トリプルクォート文字列、ダブルクォート文字列、括弧、その他のトークンを識別する正規表現
-    token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()]|[^\s()]+'
+    # トリプルクォート文字列、ダブルクォート文字列、括弧、バッククォート、カンマ、その他のトークンを識別する正規表現
+    token_pattern = r'\"\"\"(?:\\.|[^\"])*\"\"\"|\"(?:\\.|[^"])*\"|[()`,]|[^\s()`,]+'
     tokens = re.findall(token_pattern, s)
     return tokens
     
@@ -581,6 +584,16 @@ def atom(token):
             return float(token)
         except ValueError:
             return Symbol(token)
+
+def quasiquote(x, env):
+    if not isinstance(x, list):
+        return x
+    if len(x) == 2 and x[0] == 'unquote':
+        return eval(x[1], env)
+    return [quasiquote(elem, env) if isinstance(elem, list) else
+            eval(elem, env) if isinstance(elem, list) and len(elem) > 0 and elem[0] == 'unquote'
+            else elem
+            for elem in x]
 
 
 def add_route(path, lisp_func):
