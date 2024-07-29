@@ -415,7 +415,7 @@ def unquote(x, env):
     else:
         return x
 
-def eval(x, env=global_env):
+def eval(x, env=global_env, macro=False):
     #print(x)
     """Evaluate an expression in an environment."""
     try:
@@ -426,10 +426,11 @@ def eval(x, env=global_env):
             return x
         elif isinstance(x, Symbol):
             symbol_str = str(x)
-            if symbol_str in env:
-                return env[symbol_str]
-            if symbol_str in global_env:
-                return global_env[symbol_str]
+            if not macro:
+                if symbol_str in env:
+                    return env[symbol_str]
+                if symbol_str in global_env:
+                    return global_env[symbol_str]
             raise LispError(f"Symbol '{symbol_str}' not found in environment")
         elif not isinstance(x, list):
             return x
@@ -593,7 +594,7 @@ def eval(x, env=global_env):
                 expanded = proc(*x[1:])
                 print("====")
                 print(expanded)
-                return eval(expanded, env)  # Evaluate the expanded macro
+                return eval(expanded, env, macro=True)  # Evaluate the expanded macro with macro flag
             elif asyncio.iscoroutine(x[0]):
                 vals = [eval(arg, env) for arg in args]
                 result = global_event_loop.run_until_complete(proc(*vals))
