@@ -351,31 +351,23 @@ async def run_async_functions(*funcs):
 
 
 def eval(x, env=global_env):
+    """Evaluate an expression in an environment."""
     try:
-        """Evaluate an expression in an environment."""
         if isinstance(x, str):  # 定数リテラル
-            if x[0]=='"':
-                return str(x[1:-1])
+            return x[1:-1] if x[0] == '"' else x
+        elif isinstance(x, (int, float, Procedure, Macro)):
             return x
-        elif isinstance(x, (int, float, str)):  # 定数リテラル
-            return x
-        elif isinstance(x, (Procedure, Macro)):
-            return x 
-        if isinstance(x,Symbol):
+        elif isinstance(x, Symbol):
             if str(x) in env:
-                return env[str(x)] 
+                return env[str(x)]
             if str(x) in global_env:
-                return global_env[str(x)] 
-            print(f"Symbol {x} not found in env")
-            print(env)
-            exit()
-        elif not isinstance(x, list):  # constantliteral
-            return x 
+                return global_env[str(x)]
+            raise LispError(f"Symbol {x} not found in environment")
+        elif not isinstance(x, list):
+            return x
 
-        if isinstance(x,Symbol):
-            print("x=Symbol")        
         op, *args = x
-        op=str(op)
+        op = str(op)
         
         if op == '`':  # Quasiquotation
             return quasiquote(args[0], env)
@@ -396,18 +388,19 @@ def eval(x, env=global_env):
                 raise LispError("define requires at least 2 arguments")
             symbol = args[0]
             if isinstance(symbol, list):  # Function definition
-                fname = f"{symbol[0]}"
+                fname = str(symbol[0])
                 params = symbol[1:]
                 body = args[1:]
-                func = Procedure(params, ['begin'] + body, env, name=str(fname))
+                func = Procedure(params, ['begin'] + body, env, name=fname)
                 env[fname] = func
                 return func
             else:  # Variable definition
                 if len(args) != 2:
                     raise LispError("Variable definition requires exactly 2 arguments")
                 (symbol, exp) = args
-                env[f"{symbol}"] = eval(exp, env)
-                return env[f"{symbol}"]
+                value = eval(exp, env)
+                env[str(symbol)] = value
+                return value
         elif op == 'define-macro':  # macro definition
             if len(args) < 2:
                 raise LispError("define-macro requires at least 2 arguments")
@@ -501,11 +494,11 @@ def eval(x, env=global_env):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print(f"Error in eval: {e}")
-        print(f"x={x}/{type(x)}")
+        print(f"Expression: {x}, Type: {type(x)}")
         traceback_lines = traceback.format_tb(exc_traceback)
         for line in traceback_lines:
-            print(line)        
-        exit()
+            print(line)
+        raise LispError(f"Evaluation error: {e}")
 
 async def eval_async(x, env=global_env):
     result = eval(x, env)
