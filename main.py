@@ -556,6 +556,8 @@ def parse(tokens):
         return parse_atom(token)
 
 def parse_atom(token):
+    if not token:  # Handle empty token
+        return Symbol('')
     if '.' in token:
         parts = token.split('.')
         return ['dot', parse_atom(parts[0])] + [Sym(part) for part in parts[1:]]
