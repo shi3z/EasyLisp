@@ -395,15 +395,16 @@ def eval(x, env=global_env):
             if isinstance(symbol, list):  # Function definition
                 fname = f"{symbol[0]}"
                 params = symbol[1:]
-                exp = args[1:]
-                func = Procedure(params, ['begin'] + exp, env, name=str(fname))
+                body = args[1:]
+                func = Procedure(params, ['begin'] + body, env, name=str(fname))
                 env[fname] = func
                 return func
             else:  # Variable definition
                 if len(args) != 2:
                     raise LispError("Variable definition requires exactly 2 arguments")
-                exp = args[1]
+                (symbol, exp) = args
                 env[f"{symbol}"] = eval(exp, env)
+                return env[f"{symbol}"]
         elif op == 'define-macro':  # macro definition
             if len(args) < 2:
                 raise LispError("define-macro requires at least 2 arguments")
