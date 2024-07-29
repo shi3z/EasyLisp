@@ -736,6 +736,28 @@ def repl(prompt='easylisp> '):
     # Define the my-macro
     eval(parse(tokenize('(define-macro (my-macro x y) (list \'+ x y))')))
     
+    # Define the while-let macro
+    eval(parse(tokenize('''
+    (define-macro (while-let bindings body)
+      (let ((var (car (car bindings)))
+            (expr (car (cdr (car bindings)))))
+        `(let loop ()
+           (let ((,var ,expr))
+             (if ,var
+                 (begin
+                   ,body
+                   (loop))
+                 'done)))))
+    ''')))
+    
+    # Example usage of while-let macro
+    eval(parse(tokenize('''
+    (define count 5)
+    (while-let ((x (> count 0)))
+      (print count)
+      (set! count (- count 1)))
+    ''')))
+    
     while True:
         try:
             user_input = []
