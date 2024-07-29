@@ -245,6 +245,21 @@ class Procedure:
             print(e)
             raise
 
+class Macro:
+    """A user-defined macro."""
+    def __init__(self, parms, body, env, name=None):
+        self.parms, self.body, self.env, self.name = parms, body, env, name
+
+    def __call__(self, *args):
+        new_env = Env(self.parms, args, self.env)
+        try:
+            expanded = eval(self.body, new_env)
+            return eval(expanded, self.env)
+        except Exception as e:
+            print(f"Error in macro expansion: {e}")  # デバッグ出力
+            print(e)
+            raise
+
     async def async_call(self, *args):
         new_env = Env(self.parms, args, self.env)
         try:
@@ -337,7 +352,6 @@ async def run_async_functions(*funcs):
 
 def eval(x, env=global_env):
     try:
-
         """Evaluate an expression in an environment."""
         if isinstance(x, str):  # 定数リテラル
             if x[0]=='"':
@@ -345,7 +359,7 @@ def eval(x, env=global_env):
             return x
         elif isinstance(x, (int, float, str)):  # 定数リテラル
             return x
-        elif isinstance(x, Procedure):
+        elif isinstance(x, (Procedure, Macro)):
             return x 
         if isinstance(x,Symbol):
             if str(x) in env:
@@ -384,6 +398,16 @@ def eval(x, env=global_env):
                 return func
             else:  # Variable definition
                 env[f"{symbol}"] = eval(exp, env)
+        elif op == 'define-macro':  # macro definition
+            (symbol, exp) = args
+            if isinstance(symbol, list):  # Macro definition
+                mname = f"{symbol[0]}"
+                params = symbol[1:]
+                macro = Macro(params, exp, env, name=str(mname))
+                env[mname] = macro
+                return macro
+            else:
+                raise SyntaxError('Invalid macro definition')
 
         elif op == 'parallel':
             global global_event_loop
@@ -447,19 +471,18 @@ def eval(x, env=global_env):
                     raise LispError(f"Undefined property: '{prop}'")
             return obj
 
-        else:                      # procedure call
-            if asyncio.iscoroutine(x[0]):
-                proc = eval(x[0], env)
+        else:                      # procedure or macro call
+            proc = eval(x[0], env)
+            if isinstance(proc, Macro):
+                expanded = proc(*args)
+                return eval(expanded, env)
+            elif asyncio.iscoroutine(x[0]):
                 vals = [eval(arg, env) for arg in args]
-                #print(f"Calling {proc} with args {vals}") 
                 result = global_event_loop.run_until_complete(proc(*vals))
             else:
-                proc = eval(x[0], env)
                 vals = [eval(arg, env) for arg in args]
-                #print(f"Calling {proc} with args {vals}") 
                 result = proc(*vals)
             if asyncio.iscoroutine(result):
-                #print("Coroutine detected, running it")  # デバッグ出力
                 return global_event_loop.run_until_complete(result)
             return result
     except Exception as e:
