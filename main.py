@@ -670,8 +670,6 @@ def unquote_splicing(x, env):
 def quasiquote(x, env):
     if not isinstance(x, list):
         return x
-    if len(x) == 2 and x[0] == Symbol('unquote'):
-        return eval(x[1], env)
     result = []
     for elem in x:
         if isinstance(elem, Symbol) and str(elem).startswith(','):
@@ -683,6 +681,8 @@ def quasiquote(x, env):
                 raise LispError(f"Symbol '{var_name}' not found in environment")
         elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('unquote'):
             result.append(eval(elem[1], env))
+        elif isinstance(elem, list) and len(elem) > 0 and elem[0] == Symbol('+'):
+            result.append(eval(elem, env))
         else:
             result.append(quasiquote(elem, env))
     return result
