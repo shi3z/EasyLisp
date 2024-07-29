@@ -845,10 +845,10 @@ def repl(prompt='easylisp> '):
       `(begin
          (define (loop val)
            (print (format "Inside simple-macro: x = {}" val))
-           (if ,(car x)
+           (if ,(cadr x)
                (loop (- val 1))
                val))
-         (loop ,(cadr x))))
+         (loop ,(car x))))
     ''')))
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
