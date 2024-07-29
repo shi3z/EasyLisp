@@ -797,16 +797,23 @@ def repl(prompt='easylisp> '):
     # Define the while-let macro with debug output
     eval(parse(tokenize('''
     (define-macro (while-let bindings . body)
+      ;; Check if bindings is a list and has exactly two elements
       (if (and (list? bindings) (= (length bindings) 2))
+          ;; Extract the variable and the expression from bindings
           (let ((var (car bindings))
                 (expr (cadr bindings)))
+            ;; Return a loop structure
             `(let loop ()
+               ;; Bind the variable to the result of the expression
                (let ((,var ,expr))
+                 ;; If the variable is not nil, execute the body and loop again
                  (if ,var
                    (begin
                      ,@body
                      (loop))
+                   ;; If the variable is nil, return 'done
                    'done))))
+          ;; If bindings is not valid, raise an error
           (error "while-let requires a binding list with exactly two elements")))
     ''')))
     
