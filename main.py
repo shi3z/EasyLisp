@@ -293,7 +293,7 @@ class Macro:
             elif x[0] == '`':  # Quasiquote
                 return self.quasiquote(x[1], env)
             elif x[0] == ',':  # Unquote
-                return x[1]
+                return eval(x[1], env)
             else:
                 return [self.expand(elem, env) for elem in x]
         except Exception as e:
