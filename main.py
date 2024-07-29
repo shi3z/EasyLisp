@@ -178,9 +178,11 @@ def load_file(file_path):
 def execute_file(file_path, env):
     script = load_file(file_path)
     tokens = tokenize(script)
-    parsed = parse(tokens)  # 仮定: parse はトークンリストを受け取り、抽象構文木またはS式リストを返す関数
-    result = eval(parsed, env)  # 仮定: eval はパースされた入力と環境を受け取り、結果を返す関数
-    return result    
+    parsed = parse(tokens)
+    result = None
+    for expression in parsed:
+        result = eval(expression, env)
+    return result
 
 def add_globals(env):
     """Add some built-in procedures and variables to the environment."""
